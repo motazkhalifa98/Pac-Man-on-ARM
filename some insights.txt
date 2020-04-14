@@ -1,0 +1,74 @@
+Question: When pacman is being chase, can he escape without eating a power pellet?
+    -I think he will get caught in 5 seconds
+
+
+
+Timer 1 at rate of 2 moves per second:
+    -->Checks first who is being chased
+    --> Pacman -> Move Pacman
+    --> Ghost  -> Move Ghosts
+
+
+Timer 2 at rate of 3 moves per second:
+    -->Checks first who is chasing
+    --> Same thing as above
+
+Chase controller:
+    --> if power pellet is eaten
+    --> Switch speeds
+    --> set timer for 8 secs (idk how yet) before switching back
+
+
+
+Ghosts
+    --> Each has its location stored somewhere in memory
+    --> Move one by one in the board before printing the whole board
+    Move: (For ghost 1,2,3,4)
+    -Move Ghost 1
+    -Move Ghost 2
+    -Move Ghost 3
+    -Move Ghost 4
+        Move:
+        -Check surronding, first check if pacman exists in any of the locations RIGHT to the ghost,
+        If so, set direction to 1.
+        -If down, direction = 2
+        -If left, direction = 3
+        -If up, direction = 4
+        -If neither, set direction to random number between 1 and 4.
+        -Else (between 1 & 4), if pacman isn't powered, go to that direction
+        -If pacman is powered, go to opposite direction,
+        if there is obstacle in opposite direction, choose any other direction except the one for pacman.
+        -Check whatever is in that direction for the ghost
+            -If empty -> go ahead and move ghost in direction
+            -If star (pellet), set flag so that we would put a pellet back in after the second move.
+            -If pacman is empowered, ghost dies, if pacman isn't, pacman dies.
+            -Else (if it is not empty, star or pacman then it is an obstacle), regenerate random number
+            and repeat loop to check again.
+            -Also note that ghosts CANNOT go back into the box in the middle of the board
+            unless they die, otherwise they should NEVER get inside even by random number generator
+
+Pacman
+    --> Follows user's directions through UART
+    --> Number of pellets is finite, we should keep count of it so that we could know if level is completed
+    --> If Pacman ate a pellet
+        -Add 10 points
+        -Decrease pellets counter by 1.
+        -Replace pellet by pacman in board
+        -Check if pellets number = 0 --> Level passed
+            --> Start a new level with faster clockrate
+    --> If Pacman hit a ghost
+        -He dies, one life decreases (not sure if the board resets)
+        -If pacman is empowered
+            -For the first ghost while power pellet is active, 100 pts, then 200, 400,800
+            -Ghost goes back to center and stays there until power pellet effect goes away (8sec)
+    --> If Pacman ate a power pellet
+        - Replace it with pacman
+        - Se counter (idk how yet) to 8 seconds
+        - Switch speeds
+    --> If pacman went to the left and it was in the middle of the board
+        - Show up from other side, with direction = left
+    --> If pacman went to the right and it was in the middle of the board
+        - Show up from other side, with direction = right
+    --> If Empty slot, no pellets
+        - Move normally
+    --> If none of the above (obstace), remain at same location
