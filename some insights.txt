@@ -1,5 +1,6 @@
 Question: When pacman is being chase, can he escape without eating a power pellet?
     -I think he will get caught in 5 seconds
+Question: How does ghosts leave box?
 
 
 
@@ -72,3 +73,25 @@ Pacman
     --> If Empty slot, no pellets
         - Move normally
     --> If none of the above (obstace), remain at same location
+
+
+
+BOARD
+
++-------------------------------+
+|O............./=\.............O|
+|.CARL'S.C0RNER[=].MAC.PAN.2020.|
+|..............\=/..............|
+|.+====+.|.............|.+====+.|
+|.| NW |.|.===========.|.| NE |.|
+|.|    |.................|    |.|
+|.+====+.+====_____====+.+====+.|
+ ........|    MM MM    |........
+|.+====+.+=============+.+====+.|
+|.|    |........<........|    |.|
+|.| SW |.|.===========.|.| SE |.|
+|.+====+.|.\=/.....\=/.|.+====+.|
+|............../=\..............|
+|.[==].MOTAZ.K.|=|.DANIEL.J.[=].|
+|O.............................O|
++-------------------------------+ 
