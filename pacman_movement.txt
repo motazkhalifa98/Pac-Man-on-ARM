@@ -1,0 +1,28 @@
+The start up code needs to have these lines:
+
+TimerPacman_Handler,                  // Timer 0 subtimer A
+TimerGhost_Handler,                   // Timer 0 subtimer B
+
+Let Timer 0's Timer A be for Pacman
+Let Timer 0's Timer B be for the ghosts
+
+
+
+
+PacMan's movement is inputted through the UART Handler
+w, a, s, d are used to control directions
+Movement is similar to Lab6 Snake Game.
+
+In memory, there will be a direction flag. It is the same as Lab6.
+Direction flag:
+  Right: 1
+  Left: 2
+  Up: 3
+  Down: 4
+
+
+The act of moving PacMan is done in the Timer0_Handler subroutine.
+  In this subroutine, it checks what the value in the direction register is
+  -> Check the character in that direction
+      -> if up, check character that is above the current location
+  -> if character is valid space, update current location
