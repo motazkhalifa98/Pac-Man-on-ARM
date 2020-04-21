@@ -1,0 +1,49 @@
+*Empty
+*Star --> Flag
+*cannot go down if box
+*else --> random
+*check afraid
+-----------------------------------------------------
+//1- check pacman
+//2- check for prev direction
+
+--daniel forgot to check for spaces when pacman moving
+
+
+
+
+->>move outside box, prev direction = 0 (prev = 0 only when exiting box)
+
+
+->>MOVE
+	1. Reset pellet flag			;;IDK IF THIS IS NECESSARY
+	2. Look for pacman
+	|	if pacman found
+	|	update ///prev/// (i think current) direction to pacman
+	|	CHECKING DIRECTION
+	|	|	check what is in THAT direction
+	|	|	empty -> new flag = 0
+	|	|	pellet -> new flag = 1
+	|	|	power pellet -> new flag = 2
+	|	|	if middle box, sideways exit, or anything else, flag = 3
+	|	|	everything good? flag not 3? replace new direction with ghost, update ghost
+	|	|	replace old slot with prev flag,update prev flag to new, update dir mem
+	|	|	set quit move flag in mem, skip else but end func properly
+	|	|	If there is something blocking it --> flag = 3
+	|	|	|	if pacman in sight, prev dir is same, if not, prev dir = 0, RANDOM
+	|	ELSE No pac, flag = 3, RANDOM
+	|	Check direction mem, if 0
+		|	generate random number
+		|	BL CHECKING DIRECTION (Above) ^^^
+		|	jump to end of function
+		if direction = right
+		|	check if BOTH up AND down are blocks, if they are, go right (check dir)
+		|	If both are not blocks, prev dir mem =0, BL RANDOM
+		|	jump to end of function
+		if direction = left
+		|	SAME
+		if direction = up
+		|	SAME
+		if direction = down
+		|	SAME
+		
