@@ -1,13 +1,6 @@
-*Empty
-*Star --> Flag
-*cannot go down if box
-*else --> random
+
 *check afraid
 -----------------------------------------------------
-//1- check pacman
-//2- check for prev direction
-
---daniel forgot to check for spaces when pacman moving
 
 
 
