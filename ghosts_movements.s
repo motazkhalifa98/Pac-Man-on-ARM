@@ -53,7 +53,7 @@ move_ghosts_hostile:
 		LDR		r5,	ptr_to_blinky_p ; load blinky previous pellet from memory into r1
 		LDRB	r1,	[r5]
 
-		; blinky in memory
+		; blinky direction in memory
 		LDR		r5,	ptr_to_blinky_d ; load blinky prev direction from memory into r2
 		LDRB	r2,	[r5]
 		
@@ -77,7 +77,7 @@ move_ghosts_hostile:
 		LDR		r5,	ptr_to_pinky_p ; load pinky previous pellet from memory into r1
 		LDRB	r1,	[r5]
 
-		; pinky in memory
+		; pinky direction in memory
 		LDR		r5,	ptr_to_pinky_d ; load pinky prev direction from memory into r2
 		LDRB	r2,	[r5]
 		
@@ -101,7 +101,7 @@ move_ghosts_hostile:
 		LDR		r5,	ptr_to_inky_p ; load inky previous pellet from memory into r1
 		LDRB	r1,	[r5]
 
-		; inky in memory
+		; inky direction in memory
 		LDR		r5,	ptr_to_inky_d ; load inky prev direction from memory into r2
 		LDRB	r2,	[r5]
 		
@@ -125,7 +125,7 @@ move_ghosts_hostile:
 		LDR		r5,	ptr_to_clyde_p ; load clyde previous pellet from memory into r1
 		LDRB	r1,	[r5]
 
-		; clyde in memory
+		; clyde direction in memory
 		LDR		r5,	ptr_to_clyde_d ; load clyde prev direction from memory into r2
 		LDRB	r2,	[r5]
 		
@@ -148,20 +148,6 @@ move_ghosts_hostile:
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-
-;PUT LOCATION OF GHOST IN r0
-;PUT PELLET FLAG IN r1
-;PUT DIRECTION IN r2
-move_ghost_hostile:
-
-	STMFD SP! {r0-r12,lr}
-	BL	look_for_pacman
-	
-	LDMFD SP!, {r0-r12,lr}
-	MOV	  pc, lr
-
-
-	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -169,7 +155,8 @@ move_ghost_hostile:
 
 ;PUT LOCATION OF GHOST IN r0
 ;PUT PELLET FLAG IN r1
-look_for_pacman:
+;PUT DIRECTION IN r2
+move_ghost_hostile:
 
 	STMFD SP! {r2-r12,lr}
 	LDR		r4,	ptr_to_boardstring ; load board from memory into r4
@@ -250,24 +237,30 @@ look_for_pacman:
 
 goright:
 	MOV		r9,	#1			;store in r9
+	MOV		r10, #1			;says that its chasing pacman
 	BL	check_direction
 	B	quit_checking
 goleft:
 	MOV		r9,	#2			;store in r9
+	MOV		r10, #1			;says that its chasing pacman
 	BL	check_direction
 	B	quit_checking
 goup:
 	MOV		r9,	#3			;store in r9
+	MOV		r10, #1			;says that its chasing pacman
 	BL	check_direction
 	B	quit_checking
 godown:
 	MOV		r9,	#4			;store in r9
+	MOV		r10, #1			;says that its chasing pacman
 	BL	check_direction
 	B	quit_checking
 	
 old_direction:
 //FETCH OLD DIRECTION
-	BL	random_movement
+	MOV		r9, r2
+	MOV		r10, #0			;says that its NOT chasing pacman
+	BL		random_movement
 
 quit_checking:
 		
@@ -311,41 +304,41 @@ check_direction:
 	
 	CMP		r9,	#1			;checking if its right
 	BNE     leftcheck
-	MOV		r9,	#1			;store in r9
+	MOV		r8,	#1			;store in r8
 	B		converted
 leftcheck:
 	CMP		r9,	#2			;left
 	BNE		upcheck
-	MOV		r9,	#0			;store in r9
-	SUB		r9,	#1
+	MOV		r8,	#0			;store in r8
+	SUB		r8,	#1
 	B		converted
 upcheck:
 	CMP		r9,	#3			;up
 	BNE		downcheck
-	MOV		r9,	#29			;store in r9
+	MOV		r8,	#29			;store in r8
 	B		converted
 downcheck:						
 	CMP		r9,	#4			;down
-	MOV		r9,	#0			;store in r9
-	SUB		r9,	#29
+	MOV		r8,	#0			;store in r8
+	SUB		r8,	#29
 	
 	
 converted:
 	
-	ADD		r9,	r0,	r9				;r9 contains offset of new address after going right
-	LDRB	r11,[r4, r9]			;r4 is ptr to board, with offset of new address
+	ADD		r8,	r0,	r8				;r8 contains offset of new address after going right
+	LDRB	r11,[r4, r8]			;r4 is ptr to board, with offset of new address
 		
-    CMP   	r9,  #138        		;Check if it is box entrance
+    CMP   	r8,  #138        		;Check if it is box entrance
 	BNE		check_left
-    MOV		r5,	 #3
+    MOV		r5,	 #3					;set flag to 3
 	B		checked_content
 check_left:	
-    CMP   	r9,  #155        		;Check if it is left exit
+    CMP   	r8,  #155        		;Check if it is left exit
 	BNE		check_right
     MOV		r5,	 #3
 	B		checked_content
 check_right:
-    CMP   	r9,  #183        		;Check if it is right exit 
+    CMP   	r8,  #183        		;Check if it is right exit 
 	BNE		check_empty
     MOV		r5,	 #3
 	B		checked_content
@@ -372,42 +365,163 @@ checked_content:
 	BNE		switch
 	;prev dir = 0 or same
 	;in case it couldn't go in that direction, obstacle
-	BL		random_movement
+	CMP		r10, #0			;checking whether or not it was originally chasing pacman
+	BNE		nopac
+	MOV		r9,	#0			;if pacman isn't chased, change dir to 0
+nopac:
+	BL		random_movement	;otherwise use old direction stored in r9
 
 
 switch:
 	;switch everything
 	
+	LDMFD SP!, {r2-r12,lr}
+	MOV	  pc, lr
+	
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+	
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	;;uses r9 as prev direction
+random_movement:
+	STMFD SP! {r0-r12,lr}
+
+
+	CMP		r9,	#0
+	BNE		goingright
+	;generate random number
+	r9   = random number generated
+	MOV		r10, #0				;it isn't chasing pacman
+	BL		checking_direction
+	B		donerandom
+goingright:	
+	CMP		r9, #1
+	BNE		goingleft
+	
+	;check if both up and down are blocks, if they are, go right
+	MOV		r8,	#29					;store in r8, check up	
+	BL		check_blocks
+	CMP		r5,	#3
+	BNE		recurse
+	MOV		r8,	#0					;store in r8, check down
+	SUB		r8,	#29
+	CMP		r5,	#3
+	BNE		recurse
+	BL		check_direction			;it is sandwiched, check direction
+	B		donerandom
+	
+goingleft:
+	CMP		r9,	#2
+	BNE		goingup
+	
+	;check if both up and down are blocks, if they are, go left
+	MOV		r8,	#29					;store in r8, check up	
+	BL		check_blocks
+	CMP		r5,	#3
+	BNE		recurse
+	MOV		r8,	#0					;store in r8, check down
+	SUB		r8,	#29
+	CMP		r5,	#3
+	BNE		recurse
+	BL		check_direction			;it is sandwiched, check direction
+	B		donerandom
+	
+	
+	BL		checking_direction
+	B		donerandom
+goingup:
+	CMP		r9,	#3
+	BNE		goingdown
+	
+	;check if both left and are are blocks, if they are, go up
+	MOV		r8,	#1					;store in r8, check right	
+	BL		check_blocks
+	CMP		r5,	#3
+	BNE		recurse
+	MOV		r8,	#0					;store in r8, check left
+	SUB		r8,	#1
+	CMP		r5,	#3
+	BNE		recurse
+	BL		check_direction			;it is sandwiched, check direction
+	B		donerandom
+	
+	
+	BL		check_direction
+	B		donerandom
+goingdown:
+	CMP		r9,	#4
+	BNE		donerandom
+	
+	;check if both left and are are blocks, if they are, go down
+	MOV		r8,	#1					;store in r8, check right	
+	BL		check_blocks
+	CMP		r5,	#3
+	BNE		recurse
+	MOV		r8,	#0					;store in r8, check left
+	SUB		r8,	#1
+	CMP		r5,	#3
+	BNE		recurse
+	BL		check_direction			;it is sandwiched, check direction
+	B		donerandom
+	
+	
+	BL		check_direction
+	B		donerandom
+
+recurse:
+	MOV		r9,	#0					;junctioned, get random number
+	BL		random_movement
+
+donerandom:
 	LDMFD SP!, {r0-r12,lr}
 	MOV	  pc, lr
 	
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+check_blocks:		;gets offset in r8, returns flag in r5
+	STMFD	SP!, {r0-r4,r6-r12,lr}
+	
+	ADD		r8,	r0,	r8				;r8 contains offset of new address after going right
+	LDRB	r11,[r4, r8]			;r4 is ptr to board, with offset of new address	
+	
+    CMP   	r8,  #138        		;Check if it is box entrance
+	BNE		check_l
+    MOV		r5,	 #3					;set flag to 3
+	B		checked_c
+check_l:	
+    CMP   	r8,  #155        		;Check if it is left exit
+	BNE		check_r
+    MOV		r5,	 #3
+	B		checked_c
+check_r:
+    CMP   	r8,  #183        		;Check if it is right exit 
+	BNE		check_e
+    MOV		r5,	 #3
+	B		checked_c
+check_empty:
+	CMP		r11, #32				;Check if character is empty
+	BNE		check_p
+    MOV		r5,  #0					;empty flag	
+	B		checked_c
+check_p:
+	CMP		r11, #46				;Check if character is normal pellet
+	BNE		check_po
+    MOV		r5,  #0					;empty flag
+	B		checked_c	
+check_po:
+    CMP   	r11, #79        		;Check if character is power pellet
+	BNE		bo
+    MOV		r5,  #0					;empty flag	
+	B		checked_c
+bo:
+	MOV		r5,	#3
+checked_c:
 
-	
-	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	
-random_movement:
-	STMFD SP! {r0-r8,r10-r12,lr}
-	;fetch direction from memory, put into r9
-	CMP		r9,	#0
-	BNE		goingright
-	;generate random number
-	BL		checking_direction
-	B		donerandom
-	
-	
-	CMP		
-	;check if both up and down are blocks, if they are, go right
-	BL		checking_direction
-
-	
-	
-	
-	
-donerandom:
-	;;return number in r9
-	LDMFD SP!, {r0-r8,r10-r12,lr}
+	LDMFD SP!, {r0-r4,r6-r12,lr}
 	MOV	  pc, lr
+
 	
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
