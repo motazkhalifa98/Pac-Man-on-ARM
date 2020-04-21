@@ -97,6 +97,7 @@ TimerPacman_Handler:
 ;   -  (45) wall/corner -> invalid
 ;   M  (77) hostile ghost -> invalid
 ;   W  (87) afraid ghost -> valid
+;  [space] (32) space -> valid
 
 goright:
 		ADD		r7,	r0,	#1				;r7 contains the NEW ADDRESS
@@ -125,6 +126,8 @@ check_character:
     BEQ normalpellet
     CMP   r11, #79        ;Check if character is power pellet
     BEQ powerpellet
+    CMP   r11, #32        ;Check if character is a space
+    BEQ blankspace
     CMP   r11, #77        ;Check if character is hostile ghost
     BEQ hostileghost
     CMP   r11, #87        ;Check if character is afraid ghost
@@ -159,8 +162,22 @@ powerpellet:
     STRB	r11, [r4, r0]		 ;update old location with space
 
     ; put code for changing hostile ghosts to afraid ghosts
+      ; switch timer speeds
     ; set counter for 8 seconds
     ; put code for increasing score here
+
+    B con
+
+blankspace:
+    MOV   r11, #60
+    LDR		r5,	ptr_to_location
+    STRH	r7,	[r5]				 ;update the location with r7, the NEW ADDRESS
+    STRB	r11, [r4, r7]		 ;update new location with <
+
+    MOV   r11, #32
+    STRB	r11, [r4, r0]		 ;update old location with space
+
+    ; DO NOT increase score
 
     B con
 
@@ -172,6 +189,11 @@ hostileghost:
 
     ; put code for decreasing amount of lives by 1
         ; if there would be no life left, game is over
+        ; change the RGB LEDs
+    ; PacMan should be moved to the center/starting position
+    ; Ghosts should be moved back to the box
+    ; Keep the amount of pellets and power pellets the same
+
 
     B con
 
@@ -181,9 +203,13 @@ afraidghost:
     STRH	r7,	[r5]				 ;update the location with r7, the NEW ADDRESS
     STRB	r11, [r4, r7]		 ;update new location with <
 
-    ; put code for
+    ; Ghosts should be put back into the box
+    ; Ghosts should not exit the box until the 8 seconds
 
     B con
+
+
+
 
 con:
 

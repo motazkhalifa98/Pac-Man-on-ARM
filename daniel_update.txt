@@ -29,8 +29,13 @@ Update and Notes
         - left blank: setting timer for 8 seconds
         - print update
         - print update
+    - if the next location is a space
+        - update new location with PacMan (<)
+        - update old location with space
+        - made a note of NOT increasing the score
     - if the next location is a hostile ghost
-        - question: what should happen? should the board reset?
+        - left blank: PacMan should be moved back to center/starting position
+        - left blank: Ghosts should be moved back to the box
         - left blank: code to decrease life by 1
         - left blank: if there was to be 0 life left, game over
         - print update
@@ -38,6 +43,8 @@ Update and Notes
         - question: what should happen? does the ghost teleport back into the box?
         - question: should the location be updated with the space?
         - left blank: code to update score
+        - left blank: code to put ghosts back in the box
+        - left blank: code to not let the ghosts out until 8 seconds
         - print update
 
 
