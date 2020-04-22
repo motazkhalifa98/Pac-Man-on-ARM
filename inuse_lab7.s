@@ -2,11 +2,103 @@
 ; Movement keys are w, a, s, d
   .data
 direction:	.string "0", 0
-score_number:      .string "0000",0
+led_status: .string "3",0 ; 3,2,1 - lives, 4-power pellet
+level_number: .string "1",0
+score_number: .string "0000",0
+
+
+level_word: .string 27,"[31;1mLevel: ",0
+score_word: .string 27,"[34;1mScore: ",0
+
+
+sixteen_spaces: .string "               ",0
+gameover: .string 27,"[31;1mGame Over! Thanks for playing!",0
+
+
+boardstring: .string "+---------------------------+",13,10
+			.string "|O.....|.............|.....O|",13,10
+			.string "|.+--+.|.-----------.|.+--+.|",13,10
+			.string "|.|  |.................|  |.|",13,10
+			.string "|.+--+.|------ ------|.+--+.|",13,10
+			.string " ......|    MM MM    |...... ",13,10
+			.string "|.+--+.|-------------|.+--+.|",13,10
+			.string "|.|  |........<........|  |.|",13,10
+			.string "|.+--+.|.-----------.|.+--+.|",13,10
+			.string "|O.....|.............|.....O|",13,10
+			.string "+---------------------------+",0
 
   .text
-ptr_to_direction:	.word direction
-ptr_to_score_number: .word score
+  	; in lab7.s
+    .global lab_7
+    .global UART0_Handler
+    .global TimerPacman_Handler
+    .global initial_print
+    .global illuminate_RGB_LED
+	; in lab7_library.s
+  	.global uart_init
+  	.global uart_interrupt_init
+  	.global timer_init
+  	.global timerA_interrupt_clear
+  	.global timerB_interrupt_clear
+  	.global RGB_LED_init
+  	.global push_button_init
+  	.global output_character
+  	.global output_string
+  	.global output_newline
+  	.global div_and_mod
+  	.global convert_to_ASCII_updated
+
+	.global TimerGhost_Handler
+ptr_to_direction: .word direction
+ptr_to_led_status: .word led_status
+
+ptr_to_level_word: .word level_word
+ptr_to_level_number: .word level_number
+
+ptr_to_score_word: .word score_word
+ptr_to_score_number: .word score_number
+
+
+ptr_to_sixteen_paces: .word sixteen_spaces
+ptr_to_gameover: .word gameover
+
+
+ptr_to_boardstring: .word boardstring
+
+
+U0LSR:  .equ 0x18			; UART0 Line Status Register
+
+lab_7:
+	   STMFD SP!,{r0-r12,lr}    ; Store register lr on stack
+
+		BL uart_init
+	   	BL uart_interrupt_init
+	   	BL timer_init
+	 ;  BL RGB_LED_init
+	 ;  BL push_button_init
+
+		BL initial_print
+
+handler_start:
+		B		handler_end ; this goes into an infinite loop
+
+handler_end:
+		BL illuminate_RGB_LED
+		;; check condition to quit (if the amount of life is 0?)
+		;; if condition is met
+		BEQ exitprogram
+		B handler_start
+exitprogram:
+		BL output_newline
+
+		LDR r4, ptr_to_gameover
+		BL output_string
+		BL output_newline
+
+		LDMFD SP!, {r0-r12,lr}
+		MOV pc, lr
+		.end
+
 
 UART0_Handler:
 		STMFD SP!,{r0-r12,lr}   ;save all except r9
@@ -23,8 +115,8 @@ UART0_Handler:
 		BEQ			up
 		CMP			r0,	#115			;cmp with s >> go down
 		BEQ			down
-    CMP     r0, #112      ;cmp with p >> pause
-    BEQ 		pause
+    	CMP     r0, #112      ;cmp with p >> pause
+    	BEQ 		pause
 		B			continue
 
 right:
@@ -102,8 +194,8 @@ TimerPacman_Handler:
 ;  [space] (32) space -> valid
 
 goright:
-		ADD		r7,	r0,	#1				;r7 contains the NEW ADDRESS
-		LDRB	r11, [r4, r7]			;r4 is ptr to board, with offset of new address
+	ADD		r7,	r0,	#1				;r7 contains the NEW ADDRESS
+	LDRB	r11, [r4, r7]			;r4 is ptr to board, with offset of new address
           ; r11 holds the character in the new index
     B check_character
 goleft:
@@ -124,7 +216,7 @@ goleft:
 
 check_character:
 
-		CMP		r11, #46				;Check if character is normal pellet
+	CMP		r11, #46				;Check if character is normal pellet
     BEQ normalpellet
     CMP   r11, #79        ;Check if character is power pellet
     BEQ powerpellet
@@ -219,3 +311,95 @@ con:
 
 		LDMFD sp!, {r0-r12,lr}
 		BX lr
+
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+initial_print: ; this subroutines prints out the first version of the board
+ 	STMFD SP!, {r0-r12,lr}
+
+	MOV		r0,	#12						;print carriage return
+	BL		output_character
+
+	LDR r4, ptr_to_sixteen_spaces
+	BL output_string
+
+	LDR r4, ptr_to_level_word
+	BL output_string
+
+	******
+	LDR r4, ptr_to_level_number
+	BL output_string
+
+	BL output_newline
+
+	LDR r4, ptr_to_sixteen_spaces
+	BL output_string
+
+	LDR r4, ptr_to_score_word
+	BL output_string
+
+	******
+	LDR r4, ptr_to_score_number
+	BL output_string
+
+	BL output_newline
+
+	LDR r4, ptr_to_boardstring
+	BL output_string
+
+
+	LDMFD SP!, {r0-r12,lr}
+    MOV pc, lr
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+illuminate_RGB_LED:
+	  STMFD 	SP!, {r0-r12,lr}
+
+	  ; GPIO Port F's data register: 0x400253FC
+	  MOV r8, #0x53FC
+	  MOVT r8, #0x4002
+
+	  LDR r9, [r8]
+
+	  LDR r4 ptr_to_led_status
+	  CMP r4, 4; check if status is power pellet
+	  BEQ powerpellet
+
+	  CMP r4, 3; check if status is 3 lives
+	  BEQ threelives
+
+	  CMP r4, 2; check if status is 2 lives
+	  BEQ twolives
+
+	  CMP r4, 1; check if status is 1 life
+	  BEQ onelife
+
+	  ; GPIO colors
+	  ; pins 3, 2, 1
+	  ; green, blue, red
+
+powerpellet: ; turn to blue
+	    ORR r9, r9, #0x4 ; turns blue on
+	    BIC r9, r9, #0xA ; turns green and red off
+	  B continueled
+
+threelives: ; turn to green
+	    ORR r9, r9, #0x8 ; turns green on
+	    BIC r9, r9, #0x6 ; turns blue and red off
+	  B continueled
+
+twolives: ; turn to yellow
+	    ORR r9, r9, #0xA ; turns red and green on
+	    BIC r9, r9, #0x4 ; turns blue off
+	  B continueled
+
+onelife: ; turn to red
+	    ORR r9, r9, #0x2 ; turns red on
+	    BIC r9, r9, #0xC ; turns blue and green off
+	  B continueled
+
+continueled:
+
+	    STR r9, [r8]
+
+	 LDMFD sp!, {r0-r12,lr}
+	 MOV pc, lr

@@ -1,0 +1,33 @@
+April 21
+Update and Notes
+
+  - put everything into my Code Composure Studio
+  - my current Code Composure Studio is in the files: "in_use...."
+  - organized the .global and ptr_to... lines
+  - in the Start up file...
+      - included UART0_Handler, TimerPacman_Handler
+      - commented out Switches_Handler, TimerGhost_Handler
+  - included direction flag: left, right, up, down
+  - included led flag: 3 lives, 2 lives, 1 life, and 4 for power pellet
+  - included initial_print: initial board, level, and score
+
+  NOTE:
+    - printing out the score and level numbers need to be modified (i did not
+      change to ASCII)
+
+    Still need to include:
+    - the condition to check if game should be over (in the infinite loop)
+    - TimerGhost_Handler (use timerB_interrupt_clear)
+    - the code to increase score
+    - the code to do SOMETHING with the push buttons
+
+  QUESTION:
+    -in lab 6, print_update (where it prints out the new board) is at the end of
+    the timer handler
+    -in this lab, since we have 2 timer handlers, I was thinking that maybe
+    it should go in the infinite loop?
+
+
+  ERRORS:
+  - "unresolved symbols remain": I don't understand how to solve these? CCS
+  doesn't tell me exactly where it happens
