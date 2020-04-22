@@ -286,6 +286,10 @@ get_random_num:
 	MOV		r1,	#4				;set divisor to 4
 	BL		div_and_mod			;returns quotient in r0, remainder in r1, remainder = direction
 	ADD		r9,	r0				;add quotient to 4 digits number, more randomness
+	CMP		r9,	#9999			;check if it is more than 4 digits number
+	BGT		lessthan
+	SUB		r9,	#500			;subtract 500
+lessthan:	
 	LDR		r5,	ptr_to_random_no; store 4 digits number back
 	STRH	r9,	[r5]
 	MOV		r9,	r1			;move remainder to r6		
