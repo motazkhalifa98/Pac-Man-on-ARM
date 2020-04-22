@@ -1,4 +1,5 @@
   .data
+random_no:	.string	"0000",	0
 ghost_id:	.string	"0",	0
 blinky:		.string "000",	0
 blinky_p:	.string	"0",0
@@ -14,6 +15,7 @@ clyde_p:	.string	"0",0
 clyde_d:	.string	"0",0
 
   .text
+ptr_to_random_no:	.word	random_no
 ptr_to_ghost_id:	.word	ghost_id
 ptr_to_blinky:		.word	blinky
 ptr_to_blinky_p:	.word   blinky_p
@@ -32,7 +34,7 @@ ptr_to_clyde_d:		.word   clyde_d
 
 
 
-
+;;initialize random number to be 5431
 
 
 
@@ -275,8 +277,25 @@ quit_checking:
 	
 get_random_num:
 	STMFD SP! {r0-r8,r10-r12,lr}
+	
+	LDR		r5,	ptr_to_random_no; load random number from memory into r0
+	LDRH	r0,	[r5]
+	UMUL	r8,	r7,	r0,	r0		;multiply it by self, store lower half at r8
+	UBFX	r9,	r8,	#4,	#13		;get 3 hex digits and 1 binary from middle
+	MOV		r0,	r9				;set dividend to r6
+	MOV		r1,	#4				;set divisor to 4
+	BL		div_and_mod			;returns quotient in r0, remainder in r1, remainder = direction
+	ADD		r9,	r0				;add quotient to 4 digits number, more randomness
+	LDR		r5,	ptr_to_random_no; store 4 digits number back
+	STRH	r9,	[r5]
+	MOV		r9,	r1			;move remainder to r6		
+	CMP		r9,	#0			;if r6 is 0, 0 isn't direction, change to 4
+	BNE		randomnum
+	MOV		r9,	#4
+randomnum:
+
 	;;return number in r9
-	LDMFD SP!, {r0-r8,r10-r12,lr}
+	STMFD SP! {r0-r8,r10-r12,lr}
 	MOV	  pc, lr
 	
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -387,11 +406,11 @@ switch:
 random_movement:
 	STMFD SP! {r0-r12,lr}
 
-
+goagain:
 	CMP		r9,	#0
 	BNE		goingright
-	;generate random number
-	r9   = random number generated
+	;generate random number, store in r9
+	BL		get_random_num
 	MOV		r10, #0				;it isn't chasing pacman
 	BL		checking_direction
 	B		donerandom
@@ -471,7 +490,7 @@ goingdown:
 
 recurse:
 	MOV		r9,	#0					;junctioned, get random number
-	BL		random_movement
+	B		goagain
 
 donerandom:
 	LDMFD SP!, {r0-r12,lr}
