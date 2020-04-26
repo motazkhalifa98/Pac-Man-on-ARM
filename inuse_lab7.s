@@ -1,10 +1,13 @@
 ; PacMan moves based off input in the UART0 Handler
 ; Movement keys are w, a, s, d
-  .data
+.data
 direction:	.string "0", 0
 led_status: .string "3",0 ; 3,2,1 - lives, 4-power pellet
 level_number: .string "1",0
 score_number: .string "0000",0
+
+location: .string "000",0
+flag: .string "0",0
 
 
 level_word: .string 27,"[31;1mLevel: ",0
@@ -27,13 +30,14 @@ boardstring: .string "+---------------------------+",13,10
 			.string "|O.....|.............|.....O|",13,10
 			.string "+---------------------------+",0
 
-  .text
+.text
   	; in lab7.s
     .global lab_7
     .global UART0_Handler
     .global TimerPacman_Handler
     .global initial_print
     .global illuminate_RGB_LED
+    .global print_update
 	; in lab7_library.s
   	.global uart_init
   	.global uart_interrupt_init
@@ -48,7 +52,11 @@ boardstring: .string "+---------------------------+",13,10
   	.global div_and_mod
   	.global convert_to_ASCII_updated
 
+
 	.global TimerGhost_Handler
+
+ptr_to_location: .word location
+ptr_to_flag: .word flag
 ptr_to_direction: .word direction
 ptr_to_led_status: .word led_status
 
@@ -58,8 +66,7 @@ ptr_to_level_number: .word level_number
 ptr_to_score_word: .word score_word
 ptr_to_score_number: .word score_number
 
-
-ptr_to_sixteen_paces: .word sixteen_spaces
+ptr_to_sixteen_spaces: .word sixteen_spaces
 ptr_to_gameover: .word gameover
 
 
@@ -70,6 +77,22 @@ U0LSR:  .equ 0x18			; UART0 Line Status Register
 
 lab_7:
 	   STMFD SP!,{r0-r12,lr}    ; Store register lr on stack
+
+		; Current location in memory
+		LDR		r5,	ptr_to_location
+		MOV		r11,	#220   ; initialize location to 370
+		STRH	r11,	[r5]
+
+		; Current direction in memory
+		LDR		r5,	ptr_to_direction
+		MOV		r11,	#1   ; initialize direction to 1
+		STRB	r11,	[r5] ;
+
+		; Current flag in memory
+		LDR		r5,	ptr_to_flag
+		MOV		r11,	#0   ; initialize direction to 1
+		STRB	r11,	[r5] ;
+
 
 		BL uart_init
 	   	BL uart_interrupt_init
@@ -82,22 +105,7 @@ lab_7:
 handler_start:
 		B		handler_end ; this goes into an infinite loop
 
-handler_end:
-		BL illuminate_RGB_LED
-		;; check condition to quit (if the amount of life is 0?)
-		;; if condition is met
-		BEQ exitprogram
-		B handler_start
-exitprogram:
-		BL output_newline
 
-		LDR r4, ptr_to_gameover
-		BL output_string
-		BL output_newline
-
-		LDMFD SP!, {r0-r12,lr}
-		MOV pc, lr
-		.end
 
 
 UART0_Handler:
@@ -115,8 +123,10 @@ UART0_Handler:
 		BEQ			up
 		CMP			r0,	#115			;cmp with s >> go down
 		BEQ			down
-    	CMP     r0, #112      ;cmp with p >> pause
+    	CMP     	r0, #112      ;cmp with p >> pause
     	BEQ 		pause
+		CMP 		r0, #113			; cmp with q >> quit
+		BEQ 		quit
 		B			continue
 
 right:
@@ -140,6 +150,12 @@ down:
 		STRB	r9,	[r5]
 		B continue
 pause:
+		B continue
+quit:
+		LDR 	r5, 	ptr_to_flag
+		MOV 	r11, 	#1
+		STRB	r11,	[r5] ; set flag to 1
+		B continue
 
   ;; include code for what to do when user wants to pause
 
@@ -208,7 +224,7 @@ goup:
     LDRB	r11, [r4, r7]			;r4 is ptr to board, with offset of new address
           ; r11 holds the character in the new index
     B check_character
-goleft:
+godown:
     SUB		r7,	r0,	#29				;r7 contains the NEW ADDRESS
     LDRB	r11, [r4, r7]			;r4 is ptr to board, with offset of new address
           ; r11 holds the character in the new index
@@ -248,7 +264,7 @@ normalpellet:
 
 powerpellet:
     MOV   r11, #60
-    LDR		r5,	ptr_to_location
+    LDR	r5, ptr_to_location
 		STRH	r7,	[r5]				 ;update the location with r7, the NEW ADDRESS
 		STRB	r11, [r4, r7]		 ;update new location with <
 
@@ -264,7 +280,7 @@ powerpellet:
 
 blankspace:
     MOV   r11, #60
-    LDR		r5,	ptr_to_location
+    LDR	 r5, ptr_to_location
     STRH	r7,	[r5]				 ;update the location with r7, the NEW ADDRESS
     STRB	r11, [r4, r7]		 ;update new location with <
 
@@ -277,7 +293,7 @@ blankspace:
 
 hostileghost:
     MOV   r11, #60
-    LDR		r5,	ptr_to_location
+    LDR	r5,	ptr_to_location
     STRH	r7,	[r5]				 ;update the location with r7, the NEW ADDRESS
     STRB	r11, [r4, r7]		 ;update new location with <
 
@@ -293,7 +309,7 @@ hostileghost:
 
 afraidghost:
     MOV   r11, #60
-    LDR		r5,	ptr_to_location
+    LDR	r5,	ptr_to_location
     STRH	r7,	[r5]				 ;update the location with r7, the NEW ADDRESS
     STRB	r11, [r4, r7]		 ;update new location with <
 
@@ -307,17 +323,17 @@ afraidghost:
 
 con:
 
-		BL		print_update
+		BL print_update
 
 		LDMFD sp!, {r0-r12,lr}
 		BX lr
 
 		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-initial_print: ; this subroutines prints out the first version of the board
+initial_print: ; this subroutines prints out the first version of the board ;; THIS MAY BE UNNECESSARY
  	STMFD SP!, {r0-r12,lr}
 
-	MOV		r0,	#12						;print carriage return
+	MOV		r0,	#12						;print new page
 	BL		output_character
 
 	LDR r4, ptr_to_sixteen_spaces
@@ -326,7 +342,7 @@ initial_print: ; this subroutines prints out the first version of the board
 	LDR r4, ptr_to_level_word
 	BL output_string
 
-	******
+	;;;;;;
 	LDR r4, ptr_to_level_number
 	BL output_string
 
@@ -338,7 +354,7 @@ initial_print: ; this subroutines prints out the first version of the board
 	LDR r4, ptr_to_score_word
 	BL output_string
 
-	******
+	;;;;;;
 	LDR r4, ptr_to_score_number
 	BL output_string
 
@@ -360,24 +376,24 @@ illuminate_RGB_LED:
 
 	  LDR r9, [r8]
 
-	  LDR r4 ptr_to_led_status
-	  CMP r4, 4; check if status is power pellet
-	  BEQ powerpellet
+	  LDR r4, ptr_to_led_status
+	  CMP r4, #4; check if status is power pellet
+	  BEQ powerpellet2
 
-	  CMP r4, 3; check if status is 3 lives
+	  CMP r4, #3; check if status is 3 lives
 	  BEQ threelives
 
-	  CMP r4, 2; check if status is 2 lives
+	  CMP r4, #2; check if status is 2 lives
 	  BEQ twolives
 
-	  CMP r4, 1; check if status is 1 life
+	  CMP r4, #1; check if status is 1 life
 	  BEQ onelife
 
 	  ; GPIO colors
 	  ; pins 3, 2, 1
 	  ; green, blue, red
 
-powerpellet: ; turn to blue
+powerpellet2: ; turn to blue
 	    ORR r9, r9, #0x4 ; turns blue on
 	    BIC r9, r9, #0xA ; turns green and red off
 	  B continueled
@@ -403,3 +419,62 @@ continueled:
 
 	 LDMFD sp!, {r0-r12,lr}
 	 MOV pc, lr
+	 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+print_update:
+	STMFD SP!, {r0-r12,lr}
+
+	MOV		r0,	#12						;print carriage return
+	BL		output_character
+
+	LDR r4, ptr_to_sixteen_spaces
+	BL output_string
+
+	LDR r4, ptr_to_level_word
+	BL output_string
+
+	;;;;;;
+	LDR r4, ptr_to_level_number
+	BL output_string
+
+	BL output_newline
+
+	LDR r4, ptr_to_sixteen_spaces
+	BL output_string
+
+	LDR r4, ptr_to_score_word
+	BL output_string
+
+	;;;;;;
+	LDR r4, ptr_to_score_number
+	BL output_string
+
+	BL output_newline
+
+	LDR r4, ptr_to_boardstring
+	BL output_string
+
+	BL output_newline
+
+
+	LDMFD SP!, {r0-r12,lr}
+    MOV pc, lr
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+handler_end:
+		;;BL illuminate_RGB_LED
+		;; check condition to quit (if the amount of life is 0?)
+		LDR		r5, 	ptr_to_flag
+		LDRB	r11,	[r5]
+		CMP		r11,	#1
+		BNE 	handler_start
+	;	BEQ 	exitprogram
+	;	B handler_start
+exitprogram:
+		BL output_newline
+
+		LDR r4, ptr_to_gameover
+		BL output_string
+		BL output_newline
+
+		LDMFD SP!, {r0-r12,lr}
+		MOV pc, lr
+	 .end

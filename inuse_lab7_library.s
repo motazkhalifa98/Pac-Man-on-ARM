@@ -7,6 +7,7 @@
     .global TimerPacman_Handler
     .global initial_print
     .global illuminate_RGB_LED
+    .global print_update
 	; in lab7_library.s
   	.global uart_init
   	.global uart_interrupt_init
@@ -20,6 +21,7 @@
   	.global output_newline
   	.global div_and_mod
   	.global convert_to_ASCII_updated
+
 
 	.global TimerGhost_Handler
 
@@ -428,5 +430,7 @@ convert_to_ASCII_updated: ; this changes counter number from Integer to ASCII
     MOV pc, lr
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+
+	.end
 
 
