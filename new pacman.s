@@ -3,7 +3,9 @@
 	.data
 direction:	.string "0", 0
 led_status: .string "3",0 ; 3,2,1 - lives, 4-power pellet
-level_number: .string "1",0
+level_string: .string "001",0
+level_number: .string "000",0
+new_level_counter: .string "000",0
 score_number: .string "0000000",0
 score_string: .string "0000000",0
 location: .string "000",0
@@ -19,6 +21,18 @@ gameover: .string 27,"[31;1mGame Over! Thanks for playing!",0
 
 
 boardstring: .string "+---------------------------+",13,10
+			.string "|O.....|.............|.....O|",13,10
+			.string "|.+--+.|.-----------.|.+--+.|",13,10
+			.string "|.|  |.................|  |.|",13,10
+			.string "|.+--+.|------ ------|.+--+.|",13,10
+			.string " ......|    MM MM    |...... ",13,10
+			.string "|.+--+.|-------------|.+--+.|",13,10
+			.string "|.|  |........<........|  |.|",13,10
+			.string "|.+--+.|.-----------.|.+--+.|",13,10
+			.string "|O.....|.............|.....O|",13,10
+			.string "+---------------------------+",0
+
+untouched_boardstring: .string "+---------------------------+",13,10
 			.string "|O.....|.............|.....O|",13,10
 			.string "|.+--+.|.-----------.|.+--+.|",13,10
 			.string "|.|  |.................|  |.|",13,10
@@ -62,7 +76,9 @@ ptr_to_direction: .word direction
 ptr_to_led_status: .word led_status
 
 ptr_to_level_word: .word level_word
+ptr_to_level_string: .word level_string
 ptr_to_level_number: .word level_number
+ptr_to_new_level_counter: .word new_level_counter
 
 ptr_to_score_word: .word score_word
 ptr_to_score_number: .word score_number
@@ -73,6 +89,7 @@ ptr_to_gameover: .word gameover
 
 
 ptr_to_boardstring: .word boardstring
+ptr_to_untouched_boardstring: .word untouched_boardstring
 
 
 U0LSR:  .equ 0x18			; UART0 Line Status Register
@@ -80,6 +97,15 @@ U0LSR:  .equ 0x18			; UART0 Line Status Register
 lab_7:
 	   STMFD SP!,{r0-r12,lr}    ; Store register lr on stack
 
+
+		; new level counter in memory
+		LDR		r5,		ptr_to_new_level_counter
+		MOV		r11,	#000   ; initialize level counter to 0
+		STRH	r11,	[r5]
+		; new level counter in memory
+		LDR		r5,		ptr_to_level_number
+		MOV		r11,	#001   ; initialize level  to 1
+		STRH	r11,	[r5]
 		; Score number in memory
 		LDR		r5,		ptr_to_score_number
 		MOV		r11,	#0000000   ; initialize score to 0
@@ -187,7 +213,13 @@ TimerPacman_Handler:
 
 		; this clears the interrupt in timer A for Pacman
 		BL timerA_interrupt_clear
+		LDR		r5,	ptr_to_new_level_counter ; load new level counter from memory
+		LDRH		r11,	[r5]
+		CMP		r11,	#119					;	Check if = 117, all pellets eaten
+		BNE		keepgoing
+		BL		start_new_level
 
+keepgoing:
 		LDR		r4,	ptr_to_boardstring ; load board from memory into r4
 
 		LDR		r5,	ptr_to_direction ; load direction from memory into r9
@@ -309,6 +341,20 @@ normalpellet:
     MOV   r11, #32
     STRB	r11, [r4, r0]		 ;update old location with space
 
+
+	LDR		r5,	ptr_to_new_level_counter ; load new level counter from memory
+	LDRH		r11,	[r5]
+	CMP		r11,	#115
+	BNE		nfreeze
+
+	MOV		r11,	r11
+nfreeze:
+
+	ADD		r11,	#1					;	add 1
+
+	LDR		r5,	ptr_to_new_level_counter
+	STRH		r11,	[r5]
+
     ; put code for increasing score here
 
 	LDR		r5,	ptr_to_score_number ; load score from memory into r5
@@ -337,6 +383,14 @@ powerpellet:
     ; put code for changing hostile ghosts to afraid ghosts
       ; switch timer speeds
     ; set counter for 8 seconds
+
+    LDR		r5,	ptr_to_new_level_counter ; load new level counter from memory
+	LDRH		r11,	[r5]
+
+	ADD		r11,	#1					;	add 1
+
+	LDR		r5,	ptr_to_new_level_counter
+	STRH		r11,	[r5]
     ; put code for increasing score here
 
 	LDR		r5,	ptr_to_score_number ; load score from memory into r5
@@ -418,7 +472,7 @@ initial_print: ; this subroutines prints out the first version of the board ;; T
 	BL output_string
 
 	;;;;;;
-	LDR r4, ptr_to_level_number
+	LDR r4, ptr_to_level_string
 	BL output_string
 
 	BL output_newline
@@ -441,7 +495,67 @@ initial_print: ; this subroutines prints out the first version of the board ;; T
 
 	LDMFD SP!, {r0-r12,lr}
     MOV pc, lr
+    	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+start_new_level: ; this subroutines starts new level
+ 	STMFD SP!, {r0-r12,lr}
+
+		; new level counter in memory
+		LDR		r5,		ptr_to_new_level_counter
+		MOV		r11,	#000   ; reset level counter to 0
+		STRH	r11,	[r5]
+		; increment level
+
+		LDR		r5,	ptr_to_level_number ; load level from memory into r5
+		LDRH		r11,	[r5]
+
+		ADD		r11,	#1
+
+		LDR		r5,	ptr_to_level_number
+		STRH		r11,	[r5] ; increment level by 1
+
+		MOV 	r2, r11		;move level to r2 because convert_to_ascii_updated uses r2 and r4
+		LDR 	r4, ptr_to_level_string
+		BL 	 	convert_to_ASCII_updated	;this one does 3 digits
+
+		; Reset Current location in memory
+		LDR		r5,	ptr_to_location
+		MOV		r11,	#231   ; reset location to 231
+		STRH	r11,	[r5]
+
+		; Reset Current direction in memory
+		LDR		r5,	ptr_to_direction
+		MOV		r11,	#1   ; reset direction to 1
+		STRB	r11,	[r5] ;
+
+
+		LDR		r0,	ptr_to_untouched_boardstring
+		LDR		r1,	ptr_to_boardstring
+		MOV		r3,	#0
+
+addchar:
+
+		LDRB		r2,	[r0, r3]
+		CMP			r2,	#0
+		BEQ			donecopy
+		STRB		r2,	[r1, r3] ; increment score by 10
+		ADD			r3, #1
+		B			addchar
+
+donecopy:
+
+
+
+		BL initial_print
+
+	LDMFD SP!, {r0-r12,lr}
+    MOV pc, lr
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
 illuminate_RGB_LED:
 	  STMFD 	SP!, {r0-r12,lr}
 
@@ -508,7 +622,7 @@ print_update:
 	BL output_string
 
 	;;;;;;
-	LDR r4, ptr_to_level_number
+	LDR r4, ptr_to_level_string
 	BL output_string
 
 	BL output_newline
