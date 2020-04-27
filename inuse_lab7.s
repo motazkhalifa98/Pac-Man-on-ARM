@@ -1,6 +1,6 @@
 ; PacMan moves based off input in the UART0 Handler
 ; Movement keys are w, a, s, d
-.data
+	.data
 direction:	.string "0", 0
 led_status: .string "3",0 ; 3,2,1 - lives, 4-power pellet
 level_number: .string "1",0
@@ -30,7 +30,7 @@ boardstring: .string "+---------------------------+",13,10
 			.string "|O.....|.............|.....O|",13,10
 			.string "+---------------------------+",0
 
-.text
+	.text
   	; in lab7.s
     .global lab_7
     .global UART0_Handler
@@ -80,7 +80,7 @@ lab_7:
 
 		; Current location in memory
 		LDR		r5,	ptr_to_location
-		MOV		r11,	#220   ; initialize location to 370
+		MOV		r11,	#231   ; initialize location to 370
 		STRH	r11,	[r5]
 
 		; Current direction in memory
@@ -220,12 +220,12 @@ goleft:
           ; r11 holds the character in the new index
     B check_character
 goup:
-    ADD		r7,	r0,	#29				;r7 contains the NEW ADDRESS
+    SUB		r7,	r0,	#31				;r7 contains the NEW ADDRESS
     LDRB	r11, [r4, r7]			;r4 is ptr to board, with offset of new address
           ; r11 holds the character in the new index
     B check_character
 godown:
-    SUB		r7,	r0,	#29				;r7 contains the NEW ADDRESS
+    ADD		r7,	r0,	#31				;r7 contains the NEW ADDRESS
     LDRB	r11, [r4, r7]			;r4 is ptr to board, with offset of new address
           ; r11 holds the character in the new index
     B check_character
