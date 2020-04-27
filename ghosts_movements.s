@@ -40,6 +40,12 @@ boardstring: .string "+---------------------------+",13,10
 			.string "|.+--+.|.-----------.|.+--+.|",13,10
 			.string "|O.....|.............|.....O|",13,10
 			.string "+---------------------------+",0
+SPACEFORSTACK1:	.string	"                                                                                                                                                               ",0
+SPACEFORSTACK2:	.string	"                                                                                                                                                               ",0
+SPACEFORSTACK3:	.string	"                                                                                                                                                               ",0
+SPACEFORSTACK4:	.string	"                                                                                                                                                               ",0
+SPACEFORSTACK5:	.string	"                                                                                                                                                               ",0
+SPACEFORSTACK6:	.string	"                                                                                                                                                               ",0
 
   .text
   	; in lab7.s
@@ -235,7 +241,7 @@ move_ghosts_hostile:
 		STRB	r11,	[r5] ; set ghost to 3
 
 		BL	move_ghost_hostile
-		BL	print
+
 		;;;;;;;;;;;;;;;;;;;;;;;;;;
 		;move clyde
 		MOV		r0,	#0
@@ -259,7 +265,7 @@ move_ghosts_hostile:
 		STRB	r11,	[r5] ; set ghost to 4
 
 		BL	move_ghost_hostile
-		BL 	print
+
 
 		;;;;;;;;;;;;;;;;;;;;;;;;;;
 		; move blinky
@@ -284,7 +290,7 @@ move_ghosts_hostile:
 		STRB	r11,	[r5] ; set ghost to 1
 
 		BL	move_ghost_hostile
-		BL	print
+
 
 		;;;;;;;;;;;;;;;;;;;;;;;;;;
 		; move pinky
@@ -309,7 +315,7 @@ move_ghosts_hostile:
 		STRB	r11,	[r5] ; set ghost to 2
 
 		BL	move_ghost_hostile
-		BL	print
+
 
 
 
@@ -339,9 +345,17 @@ move_ghost_hostile:
 
 	STMFD SP!, {r0-r12,lr}
 	LDR		r4,	ptr_to_boardstring ; load board from memory into r4
+
 	BL		check_prison			;if there is no way out for pellet, don't move it
 	CMP		r5,	#3					;if it is trapped
 	BEQ		quit_checking
+
+	BL		check_inside_box	;change direction if it is still inside box
+	CMP		r10, #2
+	BEQ		quit_checking		;nowhere for ghost to go
+	CMP		r10, #1				;if inside box, branch
+	BEQ		THISBRANCH			;branch with new dir in r9
+
 	;checking right side
 	ADD		r7,	r0,	#1				;r7 contains offset of new address after going right
 	LDRB	r11,[r4, r7]			;r4 is ptr to board, with offset of new address
@@ -440,7 +454,11 @@ godown:
 old_direction:
 ;FETCH OLD DIRECTION
 dosmth:
-	MOV		r9, r2
+
+	MOV		r9, r2		;not inside box, use old direction from mem
+
+THISBRANCH:				;inside box, use direction from check_box
+
 	MOV		r10, #0			;says that its NOT chasing pacman
 	BL		random_movement
 
@@ -458,26 +476,30 @@ quit_checking:
 get_random_num:
 	STMFD SP!, {r0-r8,r10-r12,lr}
 
+changenumber:
 	LDR		r5,	ptr_to_random_no; load random number from memory into r0
 	LDRH	r0,	[r5]
 	UMULL	r8,	r7,	r0,	r0		;multiply it by self, store lower half at r8
-	UBFX	r9,	r8,	#4,	#13		;get 3 hex digits and 1 binary from middle
-	MOV		r0,	r9				;set dividend to r6
+	UBFX	r3, r8,	#4,	#13		;get 3 hex digits and 1 binary from middle
+	MOV		r0,	r3				;set dividend to r6
 	MOV		r1,	#4				;set divisor to 4
 	BL		div_and_mod			;returns quotient in r0, remainder in r1, remainder = direction
-	ADD		r9,	r0				;add quotient to 4 digits number, more randomness
+	ADD		r3, r0				;add quotient to 4 digits number, more randomness
 	MOV		r7,	#9999
-	CMP		r9,	r7			;check if it is more than 4 digits number
+	CMP		r3,	r7			;check if it is more than 4 digits number
 	BLT		morethan
-	SUB		r9,	#500			;subtract 500
+	SUB		r3,	#500			;subtract 500
 morethan:
 	LDR		r5,	ptr_to_random_no; store 4 digits number back
-	STRH	r9,	[r5]
-	MOV		r9,	r1			;move remainder to r6
-	CMP		r9,	#0			;if r6 is 0, 0 isn't direction, change to 4
+	STRH	r3,	[r5]
+	MOV		r3,	r1			;move remainder to r9
+	CMP		r3,	#0			;if r9 is 0, 0 isn't direction, change to 4
 	BNE		randomnum
-	MOV		r9,	#4
+	MOV		r3,	#4
 randomnum:
+	CMP		r3,	r9
+	BEQ		changenumber		;it got same direction, do it again
+	MOV		r9,	r3
 
 	;;return number in r9
 	LDMFD SP!, {r0-r8,r10-r12,lr}
@@ -633,7 +655,7 @@ clyde4:
 
 
 switched:
-
+	BL	print
 
 
 
@@ -646,18 +668,152 @@ switched:
 
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+check_inside_box:
+	STMFD SP!, {r0-r8,r11-r12,lr}	;r9 returns direction, r10 if it is inside box
+
+	MOV		r10, #0			;it is not inside box
+
+
+	CMP		r0,	#169
+	BNE		notbox1
+	LDRB	r11,[r4, #138]			;make sure it can move
+	CMP		r11, #77
+	BEQ		goslow
+	MOV		r9,	#3			;change direction to up if it is under entrance
+	MOV		r10, #1
+notbox1:
+	CMP		r0,	#138
+	BNE		notbox2
+	LDRB	r11,[r4, #107]			;make sure it can move
+	CMP		r11, #77
+	BEQ		goslow
+	MOV		r9,	#3			;change direction to up if it is AT entrance
+	MOV		r10, #1
+notbox2:
+
+
+	CMP		r0,	#163
+	BNE		notbox3
+	LDRB	r11,[r4, #164]			;make sure it can move
+	CMP		r11, #77
+	BEQ		goslow
+	MOV		r9,	#1			;change direction to right
+	MOV		r10, #1
+notbox3:
+	CMP		r0,	#164
+	BNE		notbox4
+	LDRB	r11,[r4, #165]			;make sure it can move
+	CMP		r11, #77
+	BEQ		goslow
+	MOV		r9,	#1			;change direction to right
+	MOV		r10, #1
+notbox4:
+	CMP		r0,	#165
+	BNE		notbox5
+	LDRB	r11,[r4, #166]			;make sure it can move
+	CMP		r11, #77
+	BEQ		goslow
+	MOV		r9,	#1			;change direction to right
+	MOV		r10, #1
+notbox5:
+	CMP		r0,	#166
+	BNE		notbox6
+	LDRB	r11,[r4, #167]			;make sure it can move
+	CMP		r11, #77
+	BEQ		goslow
+	MOV		r9,	#1			;change direction to right
+	MOV		r10, #1
+notbox6:
+	CMP		r0,	#167
+	BNE		notbox7
+	LDRB	r11,[r4, #168]			;make sure it can move
+	CMP		r11, #77
+	BEQ		goslow
+	MOV		r9,	#1			;change direction to right
+	MOV		r10, #1
+notbox7:
+	CMP		r0,	#168
+	BNE		notbox8
+	LDRB	r11,[r4, #169]			;make sure it can move
+	CMP		r11, #77
+	BEQ		goslow
+	MOV		r9,	#1
+	MOV		r10, #1
+
+
+notbox8:
+	CMP		r0,	#170
+	BNE		notbox9
+	LDRB	r11,[r4, #169]			;make sure it can move
+	CMP		r11, #77
+	BEQ		goslow
+	MOV		r9,	#2			;change direction to left
+	MOV		r10, #1
+notbox9:
+	CMP		r0,	#171
+	BNE		notbox10
+	LDRB	r11,[r4, #170]			;make sure it can move
+	CMP		r11, #77
+	BEQ		goslow
+	MOV		r9,	#2			;change direction to left
+	MOV		r10, #1
+notbox10:
+	CMP		r0,	#172
+	BNE		notbox11
+	LDRB	r11,[r4, #171]			;make sure it can move
+	CMP		r11, #77
+	BEQ		goslow
+	MOV		r9,	#2			;change direction to left
+	MOV		r10, #1
+notbox11:
+	CMP		r0,	#173
+	BNE		notbox12
+	LDRB	r11,[r4, #172]			;make sure it can move
+	CMP		r11, #77
+	BEQ		goslow
+	MOV		r9,	#2			;change direction to left
+	MOV		r10, #1
+notbox12:
+	CMP		r0,	#174
+	BNE		notbox13
+	LDRB	r11,[r4, #173]			;make sure it can move
+	CMP		r11, #77
+	BEQ		goslow
+	MOV		r9,	#2			;change direction to left
+	MOV		r10, #1
+notbox13:
+	CMP		r0,	#175
+	BNE		notbox14
+	LDRB	r11,[r4, #174]			;make sure it can move
+	CMP		r11, #77
+	BEQ		goslow
+	MOV		r9,	#2
+	MOV		r10, #1
+	B		notbox14
+
+goslow:
+	MOV	r10, #2
+
+notbox14:				;It is not inside box
+
+
+
+
+	LDMFD SP!, {r0-r8,r11-r12,lr}
+	MOV	  pc, lr
+
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 check_direction:
 	;r9 has direction to check
 	STMFD SP!, {r0-r12,lr}
 
-	CMP		r0,	#169
-	BNE		notbox1
-	MOV		r9,	#3			;change direction to up if it is under entrance
-notbox1:
-	CMP		r0,	#138
-	BNE		notbox2
-	MOV		r9,	#3			;change direction to up if it is AT entrance
-notbox2:
+
+
 	CMP		r9,	#1			;checking if its right
 	BNE     leftcheck
 	MOV		r8,	#1			;store in r8
@@ -677,7 +833,7 @@ upcheck:
 downcheck:
 	CMP		r9,	#4			;down
 	BNE		converted
-	ADD		r8,	#31			;store in r8
+	MOV		r8,	#31			;store in r8
 	MOV		r7,	#1			;flag for going down, prevents ghost from re-entering box
 
 
@@ -727,7 +883,7 @@ checked_content:
 	;in case it couldn't go in that direction, obstacle
 	CMP		r10, #0			;checking whether or not it was originally chasing pacman
 	BNE		nopac
-	MOV		r9,	#0			;if pacman isn't chased, change dir to 0
+	MOV		r6,	#1			;if pacman isn't chased, change blocked dir flag to 1
 nopac:
 	BL		random_movement	;otherwise use old direction stored in r9
 	B		randomdone
@@ -792,7 +948,7 @@ random_movement:
 	STMFD SP!, {r0-r12,lr}
 
 goagain:
-	CMP		r9,	#0
+	CMP		r6,	#1			;if direction is blocked
 	BNE		goingright
 	;generate random number, store in r9
 	BL		get_random_num
@@ -843,7 +999,8 @@ goingleft:
 goingup:
 	CMP		r9,	#3
 	BNE		goingdown
-
+	CMP		r0,	#169
+	BEQ		leaving_box
 	;check if both left and are are blocks, if they are, go up
 	MOV		r8,	#1					;store in r8, check right
 	BL		check_blocks
@@ -854,6 +1011,7 @@ goingup:
 	BL		check_blocks
 	CMP		r5,	#3
 	BNE		recurse
+leaving_box:
 	BL		check_direction			;it is sandwiched, check direction
 	B		donerandom
 
@@ -879,7 +1037,7 @@ goingdown:
 
 
 recurse:
-	MOV		r9,	#0					;junctioned, get random number
+	MOV		r6,	#1					;junctioned, get random number
 	B		goagain
 
 donerandom:
