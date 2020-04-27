@@ -4,8 +4,8 @@
 direction:	.string "0", 0
 led_status: .string "3",0 ; 3,2,1 - lives, 4-power pellet
 level_number: .string "1",0
-score_number: .string "0000",0
-
+score_number: .string "0000000",0
+score_string: .string "0000000",0
 location: .string "000",0
 flag: .string "0",0
 
@@ -51,6 +51,7 @@ boardstring: .string "+---------------------------+",13,10
   	.global output_newline
   	.global div_and_mod
   	.global convert_to_ASCII_updated
+   	.global convert_to_ASCII_updated_2
 
 
 	.global TimerGhost_Handler
@@ -65,6 +66,7 @@ ptr_to_level_number: .word level_number
 
 ptr_to_score_word: .word score_word
 ptr_to_score_number: .word score_number
+ptr_to_score_string: .word score_string
 
 ptr_to_sixteen_spaces: .word sixteen_spaces
 ptr_to_gameover: .word gameover
@@ -77,6 +79,11 @@ U0LSR:  .equ 0x18			; UART0 Line Status Register
 
 lab_7:
 	   STMFD SP!,{r0-r12,lr}    ; Store register lr on stack
+
+		; Score number in memory
+		LDR		r5,		ptr_to_score_number
+		MOV		r11,	#0000000   ; initialize score to 0
+		STR		r11,	[r5]
 
 		; Current location in memory
 		LDR		r5,	ptr_to_location
@@ -304,6 +311,18 @@ normalpellet:
 
     ; put code for increasing score here
 
+	LDR		r5,	ptr_to_score_number ; load score from memory into r5
+	LDR		r11,	[r5]
+
+	ADD		r11,	#10
+
+	LDR		r5,	ptr_to_score_number
+	STR		r11,	[r5] ; increment score by 10
+
+	MOV 	r2, r11		;move score to r2 because convert_to_ascii_updated uses r2 and r4
+	LDR 	r4, ptr_to_score_string
+	BL 	 	convert_to_ASCII_updated_2
+
     B con
 
 powerpellet:
@@ -319,6 +338,18 @@ powerpellet:
       ; switch timer speeds
     ; set counter for 8 seconds
     ; put code for increasing score here
+
+	LDR		r5,	ptr_to_score_number ; load score from memory into r5
+	LDR		r11,	[r5]
+
+	ADD		r11,	#50
+
+	LDR		r5,	ptr_to_score_number
+	STR		r11,	[r5] ; increment score by 10
+
+	MOV 	r2, r11		;move score to r2 because convert_to_ascii_updated uses r2 and r4
+	LDR 	r4, ptr_to_score_string
+	BL 	 	convert_to_ASCII_updated_2
 
     B con
 
@@ -399,7 +430,7 @@ initial_print: ; this subroutines prints out the first version of the board ;; T
 	BL output_string
 
 	;;;;;;
-	LDR r4, ptr_to_score_number
+	LDR r4, ptr_to_score_string
 	BL output_string
 
 	BL output_newline
@@ -489,7 +520,7 @@ print_update:
 	BL output_string
 
 	;;;;;;
-	LDR r4, ptr_to_score_number
+	LDR r4, ptr_to_score_string
 	BL output_string
 
 	BL output_newline
