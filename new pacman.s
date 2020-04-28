@@ -2,7 +2,7 @@
 ; Movement keys are w, a, s, d
 	.data
 direction:	.string "0", 0
-led_status: .string "3",0 ; 3,2,1 - lives, 4-power pellet
+led_status: .string "0",0 ; 3,2,1 - lives, 4-power pellet
 level_string: .string "001",0
 level_number: .string "000",0
 new_level_counter: .string "000",0
@@ -10,6 +10,23 @@ score_number: .string "0000000",0
 score_string: .string "0000000",0
 location: .string "000",0
 flag: .string "0",0
+activepowerpellet: .string "0",0
+
+
+random_no:	.string	"0000",	0
+ghost_id:	.string	"0",	0
+blinky:		.string "000",	0
+blinky_p:	.string	"0",0
+blinky_d:	.string	"0",0
+pinky:		.string "000",	0
+pinky_p:	.string	"0",0
+pinky_d:	.string	"0",0
+inky:		.string "000",	0
+inky_p:		.string	"0",0
+inky_d:		.string	"0",0
+clyde:		.string	"000",	0
+clyde_p:	.string	"0",0
+clyde_d:	.string	"0",0
 
 
 level_word: .string 27,"[31;1mLevel: ",0
@@ -21,7 +38,7 @@ gameover: .string 27,"[31;1mGame Over! Thanks for playing!",0
 
 
 boardstring: .string "+---------------------------+",13,10
-			.string "|O.....|.............|.....O|",13,10
+			.string "|O.....|.........M...|.....O|",13,10
 			.string "|.+--+.|.-----------.|.+--+.|",13,10
 			.string "|.|  |.................|  |.|",13,10
 			.string "|.+--+.|------ ------|.+--+.|",13,10
@@ -43,6 +60,13 @@ untouched_boardstring: .string "+---------------------------+",13,10
 			.string "|.+--+.|.-----------.|.+--+.|",13,10
 			.string "|O.....|.............|.....O|",13,10
 			.string "+---------------------------+",0
+
+SPACEFORSTACK1:	.string	"                                                                                                                                                               ",0
+SPACEFORSTACK2:	.string	"                                                                                                                                                               ",0
+SPACEFORSTACK3:	.string	"                                                                                                                                                               ",0
+SPACEFORSTACK4:	.string	"                                                                                                                                                               ",0
+SPACEFORSTACK5:	.string	"                                                                                                                                                               ",0
+SPACEFORSTACK6:	.string	"                                                                                                                                                               ",0
 
 	.text
   	; in lab7.s
@@ -91,12 +115,39 @@ ptr_to_gameover: .word gameover
 ptr_to_boardstring: .word boardstring
 ptr_to_untouched_boardstring: .word untouched_boardstring
 
+ptr_to_activepowerpellet: .word activepowerpellet
+
+ptr_to_random_no:	.word	random_no
+ptr_to_ghost_id:	.word	ghost_id
+ptr_to_blinky:		.word	blinky
+ptr_to_blinky_p:	.word   blinky_p
+ptr_to_blinky_d:	.word   blinky_d
+ptr_to_pinky:		.word   pinky
+ptr_to_pinky_p:		.word   pinky_p
+ptr_to_pinky_d:		.word   pinky_d
+ptr_to_inky:		.word   inky
+ptr_to_inky_p:		.word   inky_p
+ptr_to_inky_d:		.word   inky_d
+ptr_to_clyde:		.word   clyde
+ptr_to_clyde_p:		.word   clyde_p
+ptr_to_clyde_d:		.word   clyde_d
+
 
 U0LSR:  .equ 0x18			; UART0 Line Status Register
 
 lab_7:
 	   STMFD SP!,{r0-r12,lr}    ; Store register lr on stack
 
+
+		; initialize power pellet to 0
+		LDR		r5,		ptr_to_activepowerpellet
+		MOV		r11,	#0
+		STRB	r11,	[r5]
+
+		; initialize lives to 3
+		LDR		r5,		ptr_to_led_status
+		MOV		r11,	#3   ; initialize lives to 3
+		STRB	r11,	[r5]
 
 		; new level counter in memory
 		LDR		r5,		ptr_to_new_level_counter
@@ -130,7 +181,7 @@ lab_7:
 		BL uart_init
 	   	BL uart_interrupt_init
 	   	BL timer_init
-	 ;  BL RGB_LED_init
+	    BL RGB_LED_init
 	 ;  BL push_button_init
 
 		BL initial_print
@@ -209,10 +260,14 @@ continue:
 
 TimerPacman_Handler:
 
-		STMFD SP!,{r0-r12,lr}   ;save all except r0 and r9
+		STMFD SP!,{r0-r12,lr}
 
 		; this clears the interrupt in timer A for Pacman
 		BL timerA_interrupt_clear
+
+		BL illuminate_RGB_LED		;show colors
+
+
 		LDR		r5,	ptr_to_new_level_counter ; load new level counter from memory
 		LDRH		r11,	[r5]
 		CMP		r11,	#119					;	Check if = 117, all pellets eaten
@@ -372,40 +427,44 @@ nfreeze:
     B con
 
 powerpellet:
-    MOV   r11, #60
-    LDR	r5, ptr_to_location
-		STRH	r7,	[r5]				 ;update the location with r7, the NEW ADDRESS
-		STRB	r11, [r4, r7]		 ;update new location with <
+    MOV   	r11, 	#60
+    LDR		r5, 	ptr_to_location
+	STRH	r7,		[r5]				 ;update the location with r7, the NEW ADDRESS
+	STRB	r11, 	[r4, r7]		 ;update new location with <
 
-    MOV   r11, #32
-    STRB	r11, [r4, r0]		 ;update old location with space
+    MOV   	r11,	#32
+    STRB	r11,	[r4, r0]		 ;update old location with space
 
-    ; put code for changing hostile ghosts to afraid ghosts
-      ; switch timer speeds
-    ; set counter for 8 seconds
 
-    LDR		r5,	ptr_to_new_level_counter ; load new level counter from memory
-	LDRH		r11,	[r5]
 
+    LDR		r5,		ptr_to_new_level_counter ; load new level counter from memory
+	LDRH	r11,	[r5]
 	ADD		r11,	#1					;	add 1
-
-	LDR		r5,	ptr_to_new_level_counter
-	STRH		r11,	[r5]
+	LDR		r5,		ptr_to_new_level_counter
+	STRH	r11,	[r5]
     ; put code for increasing score here
 
-	LDR		r5,	ptr_to_score_number ; load score from memory into r5
+	LDR		r5,		ptr_to_score_number ; load score from memory into r5
 	LDR		r11,	[r5]
-
 	ADD		r11,	#50
-
-	LDR		r5,	ptr_to_score_number
+	LDR		r5,		ptr_to_score_number
 	STR		r11,	[r5] ; increment score by 10
 
-	MOV 	r2, r11		;move score to r2 because convert_to_ascii_updated uses r2 and r4
-	LDR 	r4, ptr_to_score_string
+	MOV 	r2, 	r11		;move score to r2 because convert_to_ascii_updated uses r2 and r4
+	LDR 	r4, 	ptr_to_score_string
 	BL 	 	convert_to_ASCII_updated_2
 
-    B con
+	LDR		r5,		ptr_to_activepowerpellet
+	MOV		r11,	#1		;light up rgb_led
+	STRB	r11,	[r5]
+    BL		illuminate_RGB_LED
+
+
+    ; put code for changing hostile ghosts to afraid ghosts
+    ; switch timer speeds
+    ; set counter for 8 seconds
+
+    B 		con
 
 blankspace:
     MOV   r11, #60
@@ -421,17 +480,8 @@ blankspace:
     B con
 
 hostileghost:
-    MOV   r11, #60
-    LDR	r5,	ptr_to_location
-    STRH	r7,	[r5]				 ;update the location with r7, the NEW ADDRESS
-    STRB	r11, [r4, r7]		 ;update new location with <
+	BL	lose_life
 
-    ; put code for decreasing amount of lives by 1
-        ; if there would be no life left, game is over
-        ; change the RGB LEDs
-    ; PacMan should be moved to the center/starting position
-    ; Ghosts should be moved back to the box
-    ; Keep the amount of pellets and power pellets the same
 
 
     B con
@@ -564,10 +614,16 @@ illuminate_RGB_LED:
 	  MOVT r8, #0x4002
 
 	  LDR r9, [r8]
+	  LDR		r11, ptr_to_activepowerpellet
+	  LDRB		r4,	[r11]
+	  CMP		r4, #1
+	  BEQ		powerpellet2		;if power pellet is on
 
-	  LDR r4, ptr_to_led_status
-	  CMP r4, #4; check if status is power pellet
-	  BEQ powerpellet2
+
+	  LDR 		r11, ptr_to_led_status	;else, check lives left
+	  LDRB		r4, [r11]
+
+
 
 	  CMP r4, #3; check if status is 3 lives
 	  BEQ threelives
@@ -648,6 +704,119 @@ print_update:
 	LDMFD SP!, {r0-r12,lr}
     MOV pc, lr
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+	 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+lose_life:
+	STMFD SP!, {r0-r12,lr}
+
+    ; put code for decreasing amount of lives by 1
+        ; if there would be no life left, game is over
+
+    LDR		r5,	ptr_to_led_status ; load lives into r5
+	LDRB	r11,	[r5]
+	CMP		r11,	#1
+	BEQ		endgame
+	SUB		r11,	#1		; decrement lives by 1
+	LDR		r5,	ptr_to_led_status
+	STRB	r11,	[r5]
+    ; change the RGB LEDs
+    BL		illuminate_RGB_LED
+    ; PacMan should be moved to the center/starting position
+		; Current location in memory
+	LDR		r5,		ptr_to_location
+	LDRH	r6,		[r5]
+    MOV   	r11,	#32
+    STRB	r11,	[r4, r6]		 ;update old location with space
+	MOV		r11,	#231   		 ;reset location to 231
+	STRH	r11,	[r5]
+
+	; Current direction in memory
+	LDR		r5,	ptr_to_direction
+	MOV		r11,	#1   ; initialize direction to 1
+	STRB	r11,	[r5] ;
+
+
+
+
+    ; Ghosts should be moved back to the box
+
+
+	LDR		r4,	ptr_to_boardstring ; load board from memory into r4
+
+
+	LDR		r5,	ptr_to_blinky 	;load location from memory into r0
+	LDRH	r0,	[r5]
+	LDR		r5,	ptr_to_blinky_p ; load character from memory into r1
+	LDRB	r1,	[r5]
+	;STRB	r1, [r4, r0]			;update prev char in board
+
+	LDR		r5,		ptr_to_blinky
+	MOV		r11,	#168
+	STRH	r11,	[r5]
+	LDR		r5,		ptr_to_blinky_p
+	MOV		r11,	#32
+	STRB	r11,	[r5]
+	LDR		r5,		ptr_to_blinky_d
+	MOV		r11,	#2
+	STRB	r11,	[r5]
+
+
+	LDR		r5,	ptr_to_pinky 	;load location from memory into r0
+	LDRH	r0,	[r5]
+	LDR		r5,	ptr_to_pinky_p ; load character from memory into r1
+	LDRB	r1,	[r5]
+	;STRB	r1, [r4, r0]		;update prev char in board
+
+	LDR		r5,		ptr_to_pinky
+	MOV		r11,	#170
+	STRH	r11,	[r5]
+	LDR		r5,		ptr_to_pinky_p
+	MOV		r11,	#32
+	STRB	r11,	[r5]
+	LDR		r5,		ptr_to_pinky_d
+	MOV		r11,	#2
+	STRB	r11,	[r5]
+
+
+	LDR		r5,	ptr_to_inky 	;load location from memory into r0
+	LDRH	r0,	[r5]
+	LDR		r5,	ptr_to_inky_p ; load character from memory into r1
+	LDRB	r1,	[r5]
+	;STRB	r1, [r4, r0]			;update prev char in board
+
+	LDR		r5,		ptr_to_inky
+	MOV		r11,	#167
+	STRH	r11,	[r5]
+	LDR		r5,		ptr_to_inky_p
+	MOV		r11,	#32
+	STRB	r11,	[r5]
+	LDR		r5,		ptr_to_inky_d
+	MOV		r11,	#2
+	STRB	r11,	[r5]
+
+
+	LDR		r5,	ptr_to_clyde 	;load location from memory into r0
+	LDRH	r0,	[r5]
+	LDR		r5,	ptr_to_clyde_p ; load character from memory into r1
+	LDRB	r1,	[r5]
+	;STRB	r1, [r4, r0]			;update prev char in board
+
+	LDR		r5,		ptr_to_clyde
+	MOV		r11,	#171
+	STRH	r11,	[r5]
+	LDR		r5,		ptr_to_clyde_p
+	MOV		r11,	#32
+	STRB	r11,	[r5]
+	LDR		r5,		ptr_to_clyde_d
+	MOV		r11,	#1
+	STRB	r11,	[r5]
+    ; Keep the amount of pellets and power pellets the same
+endgame:
+	;put code to endgame
+	LDMFD SP!, {r0-r12,lr}
+    MOV pc, lr
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 handler_end:
 		;;BL illuminate_RGB_LED
 		;; check condition to quit (if the amount of life is 0?)
