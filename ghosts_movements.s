@@ -10,15 +10,21 @@ ghost_id:	.string	"0",	0
 blinky:		.string "000",	0
 blinky_p:	.string	"0",0
 blinky_d:	.string	"0",0
+blinky_character: .string "0",0
 pinky:		.string "000",	0
 pinky_p:	.string	"0",0
 pinky_d:	.string	"0",0
+pinky_character: .string "0", 0
 inky:		.string "000",	0
 inky_p:		.string	"0",0
 inky_d:		.string	"0",0
+inky_character: .string "0", 0
 clyde:		.string	"000",	0
 clyde_p:	.string	"0",0
 clyde_d:	.string	"0",0
+clyde_character: .string "0", 0
+
+pacman_direction: .string "0",0
 
 
 level_word: .string 27,"[31;1mLevel: ",0
@@ -90,15 +96,21 @@ ptr_to_ghost_id:	.word	ghost_id
 ptr_to_blinky:		.word	blinky
 ptr_to_blinky_p:	.word   blinky_p
 ptr_to_blinky_d:	.word   blinky_d
+ptr_to_blinky_character: .word blinky_character
 ptr_to_pinky:		.word   pinky
 ptr_to_pinky_p:		.word   pinky_p
 ptr_to_pinky_d:		.word   pinky_d
+ptr_to_pinky_characater: .word pinky_character
 ptr_to_inky:		.word   inky
 ptr_to_inky_p:		.word   inky_p
 ptr_to_inky_d:		.word   inky_d
+ptr_to_inky_character: .word inky_character
 ptr_to_clyde:		.word   clyde
 ptr_to_clyde_p:		.word   clyde_p
 ptr_to_clyde_d:		.word   clyde_d
+ptr_to_clyde_character: .word clyde_character
+
+ptr_to_pacman_direction:	.word .pacman_direction
 
 
 U0LSR:  .equ 0x18			; UART0 Line Status Register
@@ -132,8 +144,8 @@ TimerPacman_Handler:
 		; this clears the interrupt in timer A for Pacman
 		BL timerA_interrupt_clear
 
-		BL	move_ghosts_hostile
-
+		BL	move_ghosts_afraid
+		BL  move_ghosts_hostile
 
 
 
@@ -164,6 +176,10 @@ print: ; this subroutines prints out the first version of the board
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 initialize_ghosts:
 	STMFD SP!, {r0-r12,lr}
+
+	LDR		r5,		ptr_to_pacman_direction
+	MOV		r11,	#0
+	STRB	r11,	[r5]		;assume pacman isnt near
 
 
 	LDR		r5,		ptr_to_random_no
@@ -214,6 +230,7 @@ initialize_ghosts:
     MOV pc, lr
 
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 move_ghosts_hostile:
 		STMFD SP!, {r0-r12,lr}
@@ -234,6 +251,10 @@ move_ghosts_hostile:
 		; inky direction in memory
 		LDR		r5,	ptr_to_inky_d ; load inky prev direction from memory into r2
 		LDRB	r2,	[r5]
+
+		LDR		r5,			ptr_to_inky_character
+		MOV		r11,		#77
+		STRB	r11,		[r5]		;set character
 
 		;set ghost_id
 		LDR		r5,	ptr_to_ghost_id
@@ -258,6 +279,11 @@ move_ghosts_hostile:
 		; clyde direction in memory
 		LDR		r5,	ptr_to_clyde_d ; load clyde prev direction from memory into r2
 		LDRB	r2,	[r5]
+
+		LDR		r5,			ptr_to_clyde_character
+		MOV		r11,		#77
+		STRB	r11,		[r5]		;set character
+
 
 		;set ghost_id
 		LDR		r5,	ptr_to_ghost_id
@@ -284,6 +310,10 @@ move_ghosts_hostile:
 		LDR		r5,	ptr_to_blinky_d ; load blinky prev direction from memory into r2
 		LDRB	r2,	[r5]
 
+		LDR		r5,			ptr_to_blinky_character
+		MOV		r11,		#77
+		STRB	r11,		[r5]		;set character
+
 		;set ghost_id
 		LDR		r5,	ptr_to_ghost_id
 		MOV		r11,	#1
@@ -308,6 +338,11 @@ move_ghosts_hostile:
 		; pinky direction in memory
 		LDR		r5,	ptr_to_pinky_d ; load pinky prev direction from memory into r2
 		LDRB	r2,	[r5]
+
+
+		LDR		r5,			ptr_to_pinky_character
+		MOV		r11,		#77
+		STRB	r11,		[r5]		;set character
 
 		;set ghost_id
 		LDR		r5,	ptr_to_ghost_id
@@ -472,6 +507,305 @@ quit_checking:
 
 
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+move_ghosts_afraid:
+		STMFD SP!, {r0-r12,lr}
+
+		;;;;;;;;;;;;;;;;;;;;;;;;;;
+		; move inky
+		MOV		r0,	#0
+		MOV		r1,	#0
+		MOV		r2,	#0
+		; inky location in memory
+		LDR		r5,	ptr_to_inky ; load inky location from memory into r0
+		LDRH	r0,	[r5]
+
+		; inky_p in memory
+		LDR		r5,	ptr_to_inky_p ; load inky previous pellet from memory into r1
+		LDRB	r1,	[r5]
+
+		; inky direction in memory
+		LDR		r5,	ptr_to_inky_d ; load inky prev direction from memory into r2
+		LDRB	r2,	[r5]
+
+		LDR		r5,			ptr_to_inky_character
+		MOV		r11,		#87
+		STRB	r11,		[r5]		;set character
+
+		;set ghost_id
+		LDR		r5,		ptr_to_ghost_id
+		MOV		r11,	#3
+		STRB	r11,	[r5] ; set ghost to 3
+
+		BL	move_ghost_afraid
+
+		;;;;;;;;;;;;;;;;;;;;;;;;;;
+		;move clyde
+		MOV		r0,	#0
+		MOV		r1,	#0
+		MOV		r2,	#0
+		; clyde location in memory
+		LDR		r5,	ptr_to_clyde ; load clyde location from memory into r0
+		LDRH	r0,	[r5]
+
+		; clyde_p in memory
+		LDR		r5,	ptr_to_clyde_p ; load clyde previous pellet from memory into r1
+		LDRB	r1,	[r5]
+
+		; clyde direction in memory
+		LDR		r5,	ptr_to_clyde_d ; load clyde prev direction from memory into r2
+		LDRB	r2,	[r5]
+
+		LDR		r5,			ptr_to_clyde_character
+		MOV		r11,		#87
+		STRB	r11,		[r5]		;set character
+
+		;set ghost_id
+		LDR		r5,	ptr_to_ghost_id
+		MOV		r11,	#4
+		STRB	r11,	[r5] ; set ghost to 4
+
+		BL	move_ghost_afraid
+
+
+		;;;;;;;;;;;;;;;;;;;;;;;;;;
+		; move blinky
+		MOV		r0,	#0
+		MOV		r1,	#0
+		MOV		r2,	#0
+		; blinky location in memory
+		LDR		r5,	ptr_to_blinky ; load blinky location from memory into r0
+		LDRH	r0,	[r5]
+
+		; blinky_p in memory
+		LDR		r5,	ptr_to_blinky_p ; load blinky previous pellet from memory into r1
+		LDRB	r1,	[r5]
+
+		; blinky direction in memory
+		LDR		r5,	ptr_to_blinky_d ; load blinky prev direction from memory into r2
+		LDRB	r2,	[r5]
+
+		LDR		r5,			ptr_to_blinky_character
+		MOV		r11,		#87
+		STRB	r11,		[r5]		;set character
+
+		;set ghost_id
+		LDR		r5,	ptr_to_ghost_id
+		MOV		r11,	#1
+		STRB	r11,	[r5] ; set ghost to 1
+
+		BL	move_ghost_afraid
+
+
+		;;;;;;;;;;;;;;;;;;;;;;;;;;
+		; move pinky
+		MOV		r0,	#0
+		MOV		r1,	#0
+		MOV		r2,	#0
+		; pinky location in memory
+		LDR		r5,	ptr_to_pinky ; load pinky location from memory into r0
+		LDRH	r0,	[r5]
+
+		; pinky_p in memory
+		LDR		r5,	ptr_to_pinky_p ; load pinky previous pellet from memory into r1
+		LDRB	r1,	[r5]
+
+		; pinky direction in memory
+		LDR		r5,	ptr_to_pinky_d ; load pinky prev direction from memory into r2
+		LDRB	r2,	[r5]
+
+		LDR		r5,			ptr_to_pinky_character
+		MOV		r11,		#87
+		STRB	r11,		[r5]		;set character
+
+		;set ghost_id
+		LDR		r5,	ptr_to_ghost_id
+		MOV		r11,	#2
+		STRB	r11,	[r5] ; set ghost to 2
+
+		BL	move_ghost_afraid
+
+
+
+
+		BL	print
+
+
+
+
+
+	LDMFD SP!, {r0-r12,lr}
+	MOV	  pc, lr
+
+
+
+		;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+;PUT LOCATION OF GHOST IN r0
+;PUT PELLET FLAG IN r1
+;PUT DIRECTION IN r2
+move_ghost_afraid:
+
+	STMFD SP!, {r0-r12,lr}
+	LDR		r4,	ptr_to_boardstring ; load board from memory into r4
+
+	;CHECK IF TIMER IS STILL OPERATIONAL
+	;IF YES, QUIT (don't move ghost)
+
+	LDR		r5,		ptr_to_pacman_direction
+	MOV		r11,	#0
+	STRB	r11,	[r5]		;assume pacman isnt near
+
+	BL		check_prison			;if there is no way out for pellet, don't move it
+	CMP		r5,	#3					;if it is trapped
+	BEQ		Aquit_checking
+
+	BL		check_inside_box	;change direction if it is still inside box
+	CMP		r10, #2
+	BEQ		Aquit_checking		;nowhere for ghost to go
+	CMP		r10, #1				;if inside box, branch
+	BEQ		ATHISBRANCH			;branch with new dir in r9
+
+	;checking right side
+	ADD		r7,	r0,	#1				;r7 contains offset of new address after going right
+	LDRB	r11,[r4, r7]			;r4 is ptr to board, with offset of new address
+	CMP		r11, #60			;Check if equal pacman
+	BEQ 	Adosmth
+	ADD		r7,	r0,	#2				;r7 contains offset of new address after going right
+	LDRB	r11,[r4, r7]			;r4 is ptr to board, with offset of new address
+	CMP		r11, #60			;Check if equal pacman
+	BEQ 	Agoleft
+	ADD		r7,	r0,	#3				;r7 contains offset of new address after going right
+	LDRB	r11,[r4, r7]			;r4 is ptr to board, with offset of new address
+	CMP		r11, #60			;Check if equal pacman
+	BEQ 	Agoleft
+	ADD		r7,	r0,	#4				;r7 contains offset of new address after going right
+	LDRB	r11,[r4, r7]			;r4 is ptr to board, with offset of new address
+	CMP		r11, #60			;Check if equal pacman
+	BEQ 	Agoleft
+
+	;checking left side
+	SUB		r7,	r0,	#1				;r7 contains offset of new address after going left
+	LDRB	r11,[r4, r7]			;r4 is ptr to board, with offset of new address
+	CMP		r11, #60			;Check if equal pacman
+	BEQ 	Adosmth
+	SUB		r7,	r0,	#2				;r7 contains offset of new address after going left
+	LDRB	r11,[r4, r7]			;r4 is ptr to board, with offset of new address
+	CMP		r11, #60			;Check if equal pacman
+	BEQ 	Agoright
+	SUB		r7,	r0,	#3				;r7 contains offset of new address after going left
+	LDRB	r11,[r4, r7]			;r4 is ptr to board, with offset of new address
+	CMP		r11, #60			;Check if equal pacman
+	BEQ 	Agoright
+	SUB		r7,	r0,	#4				;r7 contains offset of new address after going left
+	LDRB	r11,[r4, r7]			;r4 is ptr to board, with offset of new address
+	CMP		r11, #60			;Check if equal pacman
+	BEQ 	Agoright
+
+	;checking up
+	SUB		r7,	r0,	#31				;r7 contains offset of new address after going up
+	LDRB	r11,[r4, r7]			;r4 is ptr to board, with offset of new address
+	CMP		r11, #60			;Check if equal pacman
+	BEQ 	Adosmth
+	SUB		r7,	r0,	#62				;r7 contains offset of new address after going up
+	LDRB	r11,[r4, r7]			;r4 is ptr to board, with offset of new address
+	CMP		r11, #60			;Check if equal pacman
+	BEQ 	Agodown
+	SUB		r7,	r0,	#93				;r7 contains offset of new address after going up
+	LDRB	r11,[r4, r7]			;r4 is ptr to board, with offset of new address
+	CMP		r11, #60			;Check if equal pacman
+	BEQ 	Agodown
+	SUB		r7,	r0,	#124				;r7 contains offset of new address after going up
+	LDRB	r11,[r4, r7]			;r4 is ptr to board, with offset of new address
+	CMP		r11, #60			;Check if equal pacman
+	BEQ 	Agodown
+
+	;checking down
+	ADD		r7,	r0,	#31				;r7 contains offset of new address after going down
+	LDRB	r11,[r4, r7]			;r4 is ptr to board, with offset of new address
+	CMP		r11, #60			;Check if equal pacman
+	BEQ 	Adosmth
+	ADD		r7,	r0,	#62				;r7 contains offset of new address after going down
+	LDRB	r11,[r4, r7]			;r4 is ptr to board, with offset of new address
+	CMP		r11, #60			;Check if equal pacman
+	BEQ 	Agoup
+	ADD		r7,	r0,	#93				;r7 contains offset of new address after going down
+	LDRB	r11,[r4, r7]			;r4 is ptr to board, with offset of new address
+	CMP		r11, #60			;Check if equal pacman
+	BEQ 	Agoup
+	ADD		r7,	r0,	#124				;r7 contains offset of new address after going down
+	LDRB	r11,[r4, r7]			;r4 is ptr to board, with offset of new address
+	CMP		r11, #60			;Check if equal pacman
+	BEQ 	Agoup
+	B		Aold_direction
+
+
+Agoright:
+	LDR		r5,		ptr_to_pacman_direction
+	MOV		r11,	#2
+	STRB	r11,	[r5]		;pacman is on the left
+
+	MOV		r9,	#1			;store in r9
+	MOV		r10, #1			;says that its chasing pacman
+	BL	check_direction
+	B	Aquit_checking
+Agoleft:
+	LDR		r5,		ptr_to_pacman_direction
+	MOV		r11,	#1
+	STRB	r11,	[r5]		;pacman is on the right
+
+	MOV		r9,	#2			;store in r9
+	MOV		r10, #1			;says that its chasing pacman
+	BL	check_direction
+	B	Aquit_checking
+Agoup:
+	LDR		r5,		ptr_to_pacman_direction
+	MOV		r11,	#4
+	STRB	r11,	[r5]		;pacman is down
+
+	MOV		r9,	#3			;store in r9
+	MOV		r10, #1			;says that its chasing pacman
+	BL	check_direction
+	B	Aquit_checking
+Agodown:
+	LDR		r5,		ptr_to_pacman_direction
+	MOV		r11,	#3
+	STRB	r11,	[r5]		;pacman is up
+
+	MOV		r9,	#4			;store in r9
+	MOV		r10, #1			;says that its chasing pacman
+	BL	check_direction
+	B	Aquit_checking
+
+Aold_direction:
+;FETCH OLD DIRECTION
+Adosmth:
+
+	MOV		r9, r2		;not inside box, use old direction from mem
+
+ATHISBRANCH:				;inside box, use direction from check_box
+
+	MOV		r10, #0			;says that its NOT chasing pacman
+	BL		random_movement
+
+Aquit_checking:
+
+
+
+
+	LDMFD SP!, {r0-r12,lr}
+	MOV	  pc, lr
+
+
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 get_random_num:
 	STMFD SP!, {r0-r8,r10-r12,lr}
@@ -497,8 +831,16 @@ morethan:
 	BNE		randomnum
 	MOV		r3,	#4
 randomnum:
-	CMP		r3,	r9
+	CMP		r3,		r9
 	BEQ		changenumber		;it got same direction, do it again
+	LDR		r5,		ptr_to_pacman_direction
+	LDRB	r11,	[r5]		;check direction of pacman
+	CMP		r11,	#0			; if not chased, good to go
+	BEQ		notchased
+	CMP		r11,	r3
+	BEQ		changenumber		;if same direction of pacman, repeat again
+notchased:
+
 	MOV		r9,	r3
 
 	;;return number in r9
@@ -552,8 +894,9 @@ blinky1:
 	STRB	r1, [r4, r0]			;update prev char in board
 	;;update in board new character
 	;r8 contains offset of new address, r7 ghost
-	MOV		r7,	#77
-	STRB	r7, [r4, r8]			;update ghost in board
+	LDR		r5,		ptr_to_blinky_character
+	LDRB	r7,		[r5]		;print current character
+	STRB	r7, [r4, r8]			;update scared ghost in board
 	;;update memlocation to new one
 	LDR		r5,	ptr_to_blinky
 	STRH	r8,	[r5] 				;update location from r8
@@ -582,8 +925,9 @@ pinky2:
 	STRB	r1, [r4, r0]			;update prev char in board
 	;;update in board new character
 	;r8 contains offset of new address, r7 ghost
-	MOV		r7,	#77
-	STRB	r7, [r4, r8]			;update ghost in board
+	LDR		r5,		ptr_to_pinky_character
+	LDRB	r7,		[r5]		;print current character
+	STRB	r7, [r4, r8]			;update scared ghost in board
 	;;update memlocation to new one
 	LDR		r5,	ptr_to_pinky
 	STRH	r8,	[r5] 				;update location from r8
@@ -609,8 +953,9 @@ inky3:
 	STRB	r1, [r4, r0]			;update prev char in board
 	;;update in board new character
 	;r8 contains offset of new address, r7 ghost
-	MOV		r7,	#77
-	STRB	r7, [r4, r8]			;update ghost in board
+	LDR		r5,		ptr_to_inky_character
+	LDRB	r7,		[r5]		;print current character
+	STRB	r7, [r4, r8]			;update scared ghost in board
 	;;update memlocation to new one
 	LDR		r5,	ptr_to_inky
 	STRH	r8,	[r5] 				;update location from r8
@@ -639,8 +984,9 @@ clyde4:
 	STRB	r1, [r4, r0]			;update prev char in board
 	;;update in board new character
 	;r8 contains offset of new address, r7 ghost
-	MOV		r7,	#77
-	STRB	r7, [r4, r8]			;update ghost in board
+	LDR		r5,		ptr_to_clyde_character
+	LDRB	r7,		[r5]		;print current character
+	STRB	r7, [r4, r8]			;update scared ghost in board
 	;;update memlocation to new one
 	LDR		r5,	ptr_to_clyde
 	STRH	r8,	[r5] 				;update location from r8
