@@ -26,4 +26,4 @@ to either leave or continue game.
 -set up decremented counter of 16 for when power pellet is eaten in 0.5 timer
 -score counter for eating ghosts
 -create a subroutine that speeds up the game
--create a "GAMEOVER" subroutine
+-create a "GAMEOVER" subroutine													-> I don't think we need this
