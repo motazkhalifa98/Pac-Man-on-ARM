@@ -41,6 +41,7 @@ score_word: .string 27,"[34;1mScore: ",0
 paused_prompt: .string "Press q to leave the game or r to resume.", 0
 game_status: .string "0", 0
 prev_game_status: .string "0", 0
+eight_seconds:	.string "0", 0
 
 sixteen_spaces: .string "               ",0
 gameover: .string 27,"[31;1mGame Over! Thanks for playing!",0
@@ -184,6 +185,7 @@ ptr_to_pacman_direction:	.word pacman_direction
 ptr_to_paused_prompt:	.word paused_prompt
 ptr_to_game_status:	.word game_status
 ptr_to_prev_game_status:	.word prev_game_status
+ptr_to_eight_seconds:	.word eight_seconds
 
 U0LSR:  .equ 0x18			; UART0 Line Status Register
 
@@ -226,6 +228,11 @@ handler_end:
 initialize_board:
 	STMFD SP!, {r0-r12,lr}
 
+
+	; initialize 8 seconds to 0
+	LDR		r5,		ptr_to_eight_seconds
+	MOV		r11,	#0
+	STRB	r11,	[r5]
 
 	; initialize game status to 1
 	LDR		r5,		ptr_to_game_status
@@ -453,12 +460,28 @@ TimerPacman_Handler:
 		B	handled
 
 normalmode:
-		BL	move_pacman
+		LDR		r5,		ptr_to_activepowerpellet
+		MOV		r11,	#0		;turn off powerpellet rgb_led
+		STRB	r11,	[r5]
+		LDR		r5,		ptr_to_game_status	;turn back on game status to 1
+		MOV		r11,	#1
+		STRB	r11,	[r5]
+
+
 		BL	move_ghosts_hostile
+		BL	move_pacman
 		B 	handled
 notnormalmode:
-		BL	move_pacman
+
+		LDR		r5,		ptr_to_eight_seconds
+		LDRB	r11,	[r5]
+		CMP		r11,	#0
+		BEQ		normalmode
+		SUB		r11,	#1
+		STRB	r11,	[r5]
+
 		BL	move_ghosts_afraid
+		BL	move_pacman
 		B	handled
 
 handled:
@@ -715,6 +738,11 @@ powerpellet:
 	LDR			r5,		ptr_to_game_status	;change game mode to 2-->eat ghosts
 	MOV			r11,	#2
 	STRB		r11,	[r5]
+
+	LDR		r5,		ptr_to_eight_seconds	;countdown eight seconds
+	MOV		r11,	#16
+	STRB	r11,	[r5]
+
 
     ; switch timer speeds
     ; set counter for 8 seconds
