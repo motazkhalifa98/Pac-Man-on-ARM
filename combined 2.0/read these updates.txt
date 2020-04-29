@@ -22,7 +22,7 @@ to-do list:
 -get the power pellets operational 					->partially completed
 -modify timer flag to 2 until power pellet is no longer working
 -make sure afraid ghost goes back in box when eaten (and stays there)
--set up decremented counter of 16 for when power pellet is eaten in 0.5 timer
+-set up decremented counter of 16 for when power pellet is eaten in 0.5 timer	-> COMPLETED
 -score counter for eating ghosts
 -create a subroutine that speeds up the game
 -create a "GAMEOVER" subroutine						-> I don't think we need this
