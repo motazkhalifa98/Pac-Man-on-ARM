@@ -1,7 +1,7 @@
 0. I splitted the code between the lab_7 and library
 	*Library doesn't have any pointers and should be kept that way
-1. I put move_hostile_ghost and move_pacman in same timer
-until other timer is active.
+1. I put move_hostile_ghost and move_pacman in same timer until other timer is active.
+(I have it uploaded to run move_ghost_afraid, u can comment it out and uncomment hostile to test both)
 2. RGB LED works good for amount of lives, and lives do decrease
 3. When pacman is eaten, board resets perfectly
 4. when pacman finishes the level, board reset perfectly
