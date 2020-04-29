@@ -1,0 +1,29 @@
+0. I splitted the code between the lab_7 and library
+	*Library doesn't have any pointers and should be kept that way
+1. I put move_hostile_ghost and move_pacman in same timer
+until other timer is active.
+2. RGB LED works good for amount of lives, and lives do decrease
+3. When pacman is eaten, board resets perfectly
+4. when pacman finishes the level, board reset perfectly
+5. when pacman goes through right exit, shows up on left and other way
+6. POWER PELLET IS NOT ACTIVE YET, it only turns RGB LED to blue
+7. afraid ghosts work good escaping-wise and printing
+8. afraid ghosts still need to have subroutine for when eaten
+9. When pacman loses 3 lives, it still needs endgame subroutine
+
+to-do list:
+-add instructions to game
+-have a functional timerB
+-at start of timerA, we check flag 1-->move_pacman, 2-->move_ghosts_afraid, 3-->print pause menu    ->partially completed
+-at start of timerB, we check flag 1-->move_ghosts_hostile, 2-->move_pacman, 3-->print pause menu   ->partially completed
+-have a functional switch handler that sets flag for print pause menu 								-> COMPLETED
+-have a subroutine that prints the pause menu						  								-> COMPLETED
+-modify the UART to accept presses of q and r *ONLY* when pause menu is up,							-> COMPLETED
+to either leave or continue game.				
+-get the power pellets operational 																	->partially completed
+-modify timer flag to 2 until power pellet is no longer working
+-make sure afraid ghost goes back in box when eaten (and stays there)
+-set up decremented counter of 16 for when power pellet is eaten in 0.5 timer
+-score counter for eating ghosts
+-create a subroutine that speeds up the game
+-create a "GAMEOVER" subroutine
