@@ -746,6 +746,9 @@ afraidghost:
     LDR	r5,	ptr_to_location
     STRH	r7,	[r5]				 ;update the location with r7, the NEW ADDRESS
     STRB	r11, [r4, r7]		 ;update new location with <
+    MOV   r11, #32
+    STRB	r11, [r4, r0]		 ;update old location with space
+
 
     ; Ghosts should be put back into the box
     ; Ghosts should not exit the box until the 8 seconds
