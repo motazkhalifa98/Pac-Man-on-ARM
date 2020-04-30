@@ -162,9 +162,9 @@ timer_init:
 	MOVT r9, #0x007A
 	STR r9, [r8]
 
-  ; set up interrupt interval for timerBB GPTMTBBILR
+  ; set up interrupt interval for timerB GPTMTBILR
 	; 3 times/second = 16mil/3 ~ 5,333,333 -> 0x0051 6155
-	MOV r8, #0x0028
+	MOV r8, #0x002C
 	MOVT r8, #0x4003
 	MOV r9, #0x6155
 	MOVT r9, #0x0051
