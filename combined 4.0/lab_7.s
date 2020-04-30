@@ -44,7 +44,7 @@ score_word: .string 27,"[34;1mScore: ",0
 
 start_prompt1:	.string "Welcome to Pac-Man!", 0
 start_prompt2:	.string "Controls are: w,s,d,a for up, down, right and left respectively", 0
-start_prompt3:	.string "Press B to begin the game, and p to pause.", 0
+start_prompt3:	.string "Press b to begin the game, and p to pause.", 0
 paused_prompt: .string "Press q to quit the game, r to resume, or t to restart.", 0
 game_status: .string "0", 0
 prev_game_status: .string "0", 0
