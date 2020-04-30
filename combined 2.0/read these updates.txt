@@ -20,7 +20,7 @@ to-do list:
 -have a subroutine that prints the pause menu				-> COMPLETED
 -modify the UART to accept presses of q and r *ONLY* when pause menu is up, to either leave or continue game.	-> COMPLETED		
 -get the power pellets operational 					->partially completed
--modify timer flag to 2 until power pellet is no longer working
+-modify timer flag to 2 until power pellet is no longer working        ->COMPLETED
 -make sure afraid ghost goes back in box when eaten (and stays there)
 -set up decremented counter of 16 for when power pellet is eaten in 0.5 timer	-> COMPLETED
 -score counter for eating ghosts

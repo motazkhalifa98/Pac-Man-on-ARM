@@ -111,12 +111,11 @@ timer_init:
 	STMFD SP!,{r0-r12,lr}   ; Store register lr on stack
 
 	; connect clock to timer
-	; Connects T0 to clock by writing a 1 to bit 0 for TimerA
-  ;                                     to bit 8 for TimerB
+	; Connects T0 to clock by writing a 1 to bit 0
 	MOV r8, #0xE604
 	MOVT r8, #0x400F
 	LDR r9, [r8]
-	ORR r9, r9, #0x101
+	ORR r9, r9, #0x1
 	STR r9, [r8]
 
 	; disable timer; setup/configure while timer is disabled
@@ -125,7 +124,8 @@ timer_init:
 	MOV r8, #0x000C
 	MOVT r8, #0x4003
 	LDR r9, [r8]
-	BIC r9, r9, #0x101
+	MOV r10, #0x101
+	BIC r9, r9, r10
 	STR r9, [r8]
 
 	; set up timer for 32-bit mode
@@ -137,7 +137,7 @@ timer_init:
 	STR r9, [r8]
 
 	; put TimerA into periodic mode
-	; write a 2 to GPTMTAMR (bits 1:0)
+	; write a 2 to GPTM Timer A Mode GPTMTAMR (bits 1:0)
 	MOV r8, #0x0004
 	MOVT r8, #0x4003
 	LDR r9, [r8]
@@ -146,7 +146,7 @@ timer_init:
 	STR r9, [r8]
 
   ; put TimerB into periodic mode
-	; write a 2 to GPTMTAMR (bits 1:0)
+	; write a 2 to GPTM Timer B Mode GPTMTBMR (bits 1:0)
 	MOV r8, #0x0008
 	MOVT r8, #0x4003
 	LDR r9, [r8]
@@ -162,9 +162,9 @@ timer_init:
 	MOVT r9, #0x007A
 	STR r9, [r8]
 
-  ; set up interrupt interval for timerBB GPTMTBBILR
+  ; set up interrupt interval for timerB GPTMTBILR
 	; 3 times/second = 16mil/3 ~ 5,333,333 -> 0x0051 6155
-	MOV r8, #0x0028
+	MOV r8, #0x002C
 	MOVT r8, #0x4003
 	MOV r9, #0x6155
 	MOVT r9, #0x0051
@@ -176,7 +176,8 @@ timer_init:
 	MOV r8, #0x0018
 	MOVT r8, #0x4003
 	LDR r9, [r8]
-	ORR r9, r9, #0x101
+	MOV r10, #0x101
+	ORR r9, r9, r10
 	STR r9, [r8]
 
 	; enable NVIC Interrupt timer0
@@ -191,12 +192,12 @@ timer_init:
 
 	; enable timer A and B now since configuration is done
 	; write 1 to TAEN (bit 0) for timerA
-  ; write 1 to TBEN (bit 0) for timerB
+  ; write 1 to TBEN (bit 8) for timerB
 	MOV r8, #0x000C
 	MOVT r8, #0x4003
 	LDR r9, [r8]
-	ORR r9, r9, #0x101
-
+	MOV r10, #0x101
+	ORR r9, r9, r10
 	STR r9, [r8]
 
 
@@ -227,7 +228,8 @@ timerB_interrupt_clear:
 	MOV r8, #0x0024
 	MOVT r8, #0x4003
 	LDR r9, [r8]
-	ORR r9, r9, #0x100
+	MOV r10, #0x100
+	ORR r9, r9, r10
 	STR r9, [r8]
 
 	LDMFD sp!, {r0-r12,lr}
