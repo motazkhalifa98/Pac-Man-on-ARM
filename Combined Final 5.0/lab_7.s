@@ -542,7 +542,7 @@ slownotnormalmode:
 		BEQ		slownormalmode
 		SUB		r11,	#1
 		STRB	r11,	[r5]
-		;BL	move_ghosts_afraid
+		BL	move_ghosts_afraid
 slowhandled:
 
 		LDMFD sp!, {r0-r12,lr}
@@ -571,7 +571,7 @@ TimerFasthandler:
 	BLEQ		print_pause
 	B	fasthandled
 fastnormalmode:
-	;BL	move_ghosts_hostile
+	BL	move_ghosts_hostile
 	B 	fasthandled
 fastnotnormalmode:
 	BL	move_pacman
