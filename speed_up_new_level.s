@@ -2,7 +2,7 @@
 speed_up_new_level:
   STMFD SP!,{r0-r12,lr}
 
-  ; Step 1a: disable timer A; write a 0 to TAEN (bit 0)
+  ; Step 1a: disable timer 0A; write a 0 to TAEN (bit 0)
   MOV r0, #0x000C
 	MOVT r0, #0x4003
 	LDR r9, [r0]
@@ -26,22 +26,22 @@ speed_up_new_level:
   ; Step 4a: Store result back to interval register
   STR r10, [r0]
 
-  ; Step 5a: Enable Timer A; write 1 to TAEN (bit 0) for timerA
+  ; Step 5a: Enable Timer 0A; write 1 to TAEN (bit 0) for timer0A
   MOV r0, #0x000C
   MOVT r0, #0x4003
   LDR r9, [r0]
   ORR r9, r9, #0x1
   STR r9, [r0]
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  ; Step 1b: disable timer B; write a 0 to TBEN (bit 8)
-  MOV r0, #0x000C
+  ; Step 1b: disable timer B; write a 0 to TAEN (bit 0)
+  MOV r0, #0x100C
   MOVT r0, #0x4003
   LDR r9, [r0]
-  BIC r9, r9, #0x100
+  BIC r9, r9, #0x1
   STR r9, [r0]
 
   ; Step 2b: Read value in current interval register
-  MOV r0, #0x0028
+  MOV r0, #0x1028
 	MOVT r0, #0x4003
   LDR r9, [r0] ; r9 holds the value of the interval register; initially, it is
     ; 8 million, or 2 times per second
@@ -57,11 +57,11 @@ speed_up_new_level:
   ; Step 4b: Store result back to interval register
   STR r10, [r0]
 
-  ; Step 5bb: Enable Timer B; write 1 to TBEN (bit 8) for timerB
-  MOV r0, #0x000C
+  ; Step 5b: Enable Timer 1A; write 1 to TAEN (bit 0) for timer1A
+  MOV r0, #0x100C
   MOVT r0, #0x4003
   LDR r9, [r0]
-  ORR r9, r9, #0x100
+  ORR r9, r9, #0x1
   STR r9, [r0]
 
   LDMFD sp!, {r0-r12,lr}
