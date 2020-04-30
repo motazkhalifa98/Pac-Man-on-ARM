@@ -192,7 +192,7 @@ timer_init:
 
 	; enable timer A and B now since configuration is done
 	; write 1 to TAEN (bit 0) for timerA
-  ; write 1 to TBEN (bit 0) for timerB
+  ; write 1 to TBEN (bit 8) for timerB
 	MOV r8, #0x000C
 	MOVT r8, #0x4003
 	LDR r9, [r8]
@@ -228,7 +228,8 @@ timerB_interrupt_clear:
 	MOV r8, #0x0024
 	MOVT r8, #0x4003
 	LDR r9, [r8]
-	ORR r9, r9, #0x100
+	MOV r10, #0x100
+	ORR r9, r9, r10
 	STR r9, [r8]
 
 	LDMFD sp!, {r0-r12,lr}
